@@ -1,0 +1,26 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: argocd-ui
+  annotations:
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: ArgoCD Dashboard
+    gethomepage.dev/group: Operations
+    gethomepage.dev/icon: argocd.png
+    gethomepage.dev/name: ArgoCD
+    gethomepage.dev/pod-selector: " "
+  labels:
+    name: argocd-ui
+spec:
+  rules:
+  - host: argocd.{{ env_domain }}
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: argocd-server
+            port: 
+              number: 80

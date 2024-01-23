@@ -1,0 +1,8 @@
+spec:
+  app: metallb
+  identifier: metallb
+  app_version: 0.13.12
+
+metallb:
+  address_pool:
+    - {{ lb_ip_range }}

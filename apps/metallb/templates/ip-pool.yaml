@@ -1,0 +1,14 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: prod
+  namespace: metallb-system
+spec:
+  addresses:
+    {{ toYaml .Values.metallb.address_pool | indent 2 }}
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: prod
+  namespace: metallb-system

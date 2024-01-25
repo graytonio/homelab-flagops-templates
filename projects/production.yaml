@@ -32,7 +32,7 @@ spec:
   - git:
       files:
       - path: production/apps/*/values.yaml
-      repoURL: '[{ gitops_source }]'
+      repoURL: '[{ env "gitops_source" }]'
       requeueAfterSeconds: 20
   template:
     metadata:
@@ -44,17 +44,17 @@ spec:
       annotations:
         argocd.argoproj.io/sync-wave: '{{ default "5" .spec.sync_wave }}'
       name: production-{{ .spec.app }}-{{ .spec.identifier }}
-      namespace: argocd
-      spec:
-        destination:
-          namespace: '{{ .spec.app }}-{{ .spec.identifier }}'
-          server: '{{ default "https://kubernetes.default.svc" .spec.dest_cluster }}'
-        ignoreDifferences:
-          - group: argoproj.io
-            jsonPointers:
-              - /status
-            kind: Application
-        project: production
-        sources:
-          - path: '{{ .path.path }}'
-            repoURL: '[{ gitops_source }]'
+      namespace: '{{ if .spec.enabled }}argocd{{ else }}default{{ end }}'
+    spec:
+      destination:
+        namespace: '{{ .spec.app }}-{{ .spec.identifier }}'
+        server: '{{ default "https://kubernetes.default.svc" .spec.dest_cluster }}'
+      ignoreDifferences:
+        - group: argoproj.io
+          jsonPointers:
+            - /status
+          kind: Application
+      project: production
+      sources:
+        - path: '{{ .path.path }}'
+          repoURL: '[{ env "gitops_source" }]'

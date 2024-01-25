@@ -14,7 +14,7 @@ metadata:
     name: argocd-ui
 spec:
   rules:
-  - host: argocd.{{ env_domain }}
+  - host: argocd.[{ env "env_domain" }]
     http:
       paths:
       - pathType: Prefix

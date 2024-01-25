@@ -1,0 +1,36 @@
+envs:
+  production:
+    provider: flagsmith
+    apiKey: M5SoJJJs5UGfxEUJxUsVAi
+  staging:
+    provider: flagsmith
+    apiKey: NCfN9iXroqPpkMLkwV7rkU
+
+paths:
+  - path: apps/
+    env: production
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: apps/production/
+
+  - path: apps/
+    env: staging
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: apps/staging/
+
+  - path: bootstrap/
+    env: production
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: bootstrap/
+
+  - path: projects/
+    env: production
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: projects/

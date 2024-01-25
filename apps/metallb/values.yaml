@@ -5,4 +5,4 @@ spec:
 
 metallb:
   address_pool:
-    - {{ lb_ip_range }}
+    - [{ env "lb_ip_range" }]

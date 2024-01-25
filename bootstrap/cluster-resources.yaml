@@ -11,7 +11,7 @@ spec:
   - git:
       files:
       - path: bootstrap/cluster-resources/*.json
-      repoURL: {{ gitops_source }}
+      repoURL: [{ env "gitops_source" }]
       requeueAfterSeconds: 20
       revision: ""
       template:
@@ -41,7 +41,7 @@ spec:
       project: default
       source:
         path: bootstrap/cluster-resources/{{name}}
-        repoURL: {{ gitops_source }}
+        repoURL: [{ env "gitops_source" }]
       syncPolicy:
         automated:
           allowEmpty: true

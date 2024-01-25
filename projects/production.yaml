@@ -31,7 +31,7 @@ spec:
   generators:
   - git:
       files:
-      - path: production/apps/*/values.yaml
+      - path: apps/production/**/values.yaml
       repoURL: '[{ env "gitops_source" }]'
       requeueAfterSeconds: 20
       revision: HEAD
@@ -45,11 +45,11 @@ spec:
       annotations:
         argocd.argoproj.io/sync-wave: '{{ default "5" .spec.sync_wave }}'
       name: production-{{ .spec.app }}-{{ .spec.identifier }}
-      namespace: '{{ if .spec.enabled }}argocd{{ else }}default{{ end }}'
+      namespace: '{{ ternary "argocd" "default" true }}'
     spec:
       destination:
-        namespace: '{{ .spec.app }}-{{ .spec.identifier }}'
-        server: '{{ default "https://kubernetes.default.svc" .spec.dest_cluster }}'
+        namespace: '{{ default (printf "%s-%s" .spec.app .spec.identifier) .spec.namespace }}'
+        server: '{{ ternary "https://kubernetes.default.svc" "" .spec.enabled }}'
       ignoreDifferences:
         - group: argoproj.io
           jsonPointers:
@@ -59,3 +59,9 @@ spec:
       sources:
         - path: '{{ .path.path }}'
           repoURL: '[{ env "gitops_source" }]'
+      syncPolicy:
+        syncOptions:
+        - CreateNamespace=true
+        automated:
+          prune: true
+          selfHeal: true

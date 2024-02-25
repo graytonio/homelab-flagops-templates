@@ -1,0 +1,5 @@
+applications:
+[{- if env "metallb_enabled" }]
+  metallb:
+  [{- env "metallb" | nindent 4 }]
+[{ end -}]

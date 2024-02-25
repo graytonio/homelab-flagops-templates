@@ -1,10 +1,3 @@
-spec:
-  app: metallb
-  identifier: metallb
-  app_version: 0.13.12
-  namespace: metallb-system
-  enabled: [{ env "metallb_enabled" }]
-
 metallb:
   address_pool:
     - [{ env "lb_ip_range" }]

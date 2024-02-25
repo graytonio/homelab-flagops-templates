@@ -21,6 +21,20 @@ paths:
       repo: git@github.com:graytonio/homelab-deployment.git
       path: apps/staging/
 
+  - path: config/
+    env: staging
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: config/staging
+
+  - path: config/
+    env: production
+    dest:
+      type: git
+      repo: git@github.com:graytonio/homelab-deployment.git
+      path: config/production
+
   - path: bootstrap/
     env: production
     dest:

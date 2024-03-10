@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-api
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: traefik
+  ports:
+    - port: 9000
+      name: traefik
+      protocol: TCP

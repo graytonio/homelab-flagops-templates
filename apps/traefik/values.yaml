@@ -10,11 +10,19 @@ cloudflare:
   remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
   domain: [{ env "env_domain" }]
 
+ingress:
+  host: traefik.[{ env "env_domain" }]
+
 traefik:
+  additionalArguments:
+    - --api.insecure=true
   ingressRoute:
     dashboard:
-      entryPoints:
-        - websecure
+      enabled: false
+  providers:
+    kubernetesIngress:
+      publishedService:
+        enabled: true
 
 cert-manager:
   installCRDs: true

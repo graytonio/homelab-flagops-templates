@@ -1,0 +1,12 @@
+longhorn:
+  persistence:
+    defaultClass: true
+
+  helmPreUpgradeCheckerJob:
+    enabled: false
+
+  preUpgradeChecker:
+    jobEnabled: false
+
+  ingress:
+    host: longhorn.[{ env "env_domain" }]

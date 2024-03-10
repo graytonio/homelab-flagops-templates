@@ -3,3 +3,15 @@ applications:
   metallb:
   [{- env "metallb" | nindent 4 }]
 [{ end -}]
+[{- if env "longhorn_enabled" }]
+  longhorn:
+  [{- env "longhorn" | nindent 4 }]
+[{ end -}]
+[{- if env "traefik_enabled" }]
+  traefik:
+  [{- env "traefik" | nindent 4 }]
+[{ end -}]
+[{- if env "external_secrets_enabled"}]
+  external_secrets:
+  [{- env "external_secrets" | nindent 4 }]
+[{ end }]

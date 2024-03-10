@@ -1,0 +1,19 @@
+{{ if .Values.acme.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    email: {{ .Values.acme.email }}
+    server: {{ .Values.acme.production | ternary "https://acme-v02.api.letsencrypt.org/directory" "https://acme-staging-v02.api.letsencrypt.org/directory" }}
+    privateKeySecretRef:
+      name: cloudflare-issuer-account-key
+    solvers:
+    - dns01:
+        cloudflare:
+          email: {{ .Values.cloudflare.email }}
+          apiKeySecretRef:
+            name: {{ .Values.cloudflare.secretRef }}
+            key: {{ .Values.cloudflare.secretKey }}
+{{ end }}

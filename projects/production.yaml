@@ -30,15 +30,16 @@ spec:
   goTemplate: true
   generators:
     - matrix:
-      generators:
-      - git:
-          repoULR: '[{ env "gitops_source" }]'
-          requeueAfterSeconds: 20
-          revision: HEAD
-          files:
-            - path: config/production/applications.yaml
-      - list:
-          elementsYaml: "{{ .applications | values }}"
+        generators:
+        - git:
+            repoURL: '[{ env "gitops_source" }]'
+            requeueAfterSeconds: 20
+            revision: HEAD
+            files:
+              - path: config/production/applications.yaml
+        - list:
+            elements: []
+            elementsYaml: "{{ .applications | values | toJson }}"
 
   template:
     metadata:
@@ -46,7 +47,6 @@ spec:
         app.kubernetes.io/managed-by: argocd
         app.kubernetes.io/name: '{{ .app }}'
         app.kubernetes.io/instance: '{{ .app }}-{{ .identifier }}'
-        app.kubernetes.io/version: '{{ .app_version }}'
       annotations:
         argocd.argoproj.io/sync-wave: '{{ default "5" .sync_wave }}'
       name: production-{{ .app }}-{{ .identifier }}
@@ -62,7 +62,7 @@ spec:
           kind: Application
       project: production
       sources:
-        - path: '/apps/production/{{ .app }}'
+        - path: 'apps/production/{{ .app }}'
           repoURL: '[{ env "gitops_source" }]'
       syncPolicy:
         syncOptions:

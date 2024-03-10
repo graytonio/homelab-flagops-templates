@@ -1,0 +1,20 @@
+acme:
+  enabled: [{ env "acme_certs_enabled" }]
+  production: [{ env "acme_certs_production_enabled" }]
+  email: [{ env "acme_certs.email" }]
+
+cloudflare:
+  email: [{ env "acme_certs.cloud_email"}]
+  secretRef: [{ env "acme_certs.cloud_secret"}]
+  secretKey: [{ env "acme_certs.cloud_secretKey"}]
+  remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
+  domain: [{ env "env_domain" }]
+
+traefik:
+  ingressRoute:
+    dashboard:
+      entryPoints:
+        - websecure
+
+cert-manager:
+  installCRDs: true

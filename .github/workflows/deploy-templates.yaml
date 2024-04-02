@@ -11,13 +11,15 @@ jobs:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
-              with:
-                ssh-key: ${{ secrets.DEPLOY_SSH_KEY }}
             - uses: actions/setup-go@v4
               with:
                 go-version: '1.20'
             - name: Install FlagOps
               run: go install github.com/graytonio/flagops@v0.1.4
+            - name: Setup SSH Agent
+              uses: webfactory/ssh-agent@v0.9.0
+              with:
+                ssh-private-key: ${{ secrets.DEPLOY_SSH_KEY }}
             - name: Run FlagOps
               run: |
                 git config user.name "FlagOps"

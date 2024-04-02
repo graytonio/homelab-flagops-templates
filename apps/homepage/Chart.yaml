@@ -1,0 +1,9 @@
+apiVersion: v2
+name: homepage
+description: Homelab Portal
+type: application
+version: 0.1.0
+dependencies:
+  - name: homepage
+    repository: https://jameswynn.github.io/helm-charts
+    version: 1.2.3

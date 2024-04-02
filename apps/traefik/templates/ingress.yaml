@@ -11,6 +11,10 @@ metadata:
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik
 spec:
+  tls:
+    - hosts:
+      - {{ .Values.ingress.host }}
+      secretName: tls-traefik-ingress-dns
   rules:
   - host: {{ .Values.ingress.host }}
     http:

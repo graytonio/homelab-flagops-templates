@@ -10,6 +10,8 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik
+  labels:
+    name: traefik-dashboard
 spec:
   tls:
     - hosts:

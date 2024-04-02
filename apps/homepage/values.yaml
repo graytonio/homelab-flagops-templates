@@ -10,7 +10,7 @@ homepage:
           - {{ .Values.ingress.host }}
           secretName: tls-traefik-ingress-dns
       hosts:
-        - hosts: portal.[{ env "env_domain" }]
+        - host: portal.[{ env "env_domain" }]
           paths: 
             - path: /
               pathType: Prefix

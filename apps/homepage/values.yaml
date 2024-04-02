@@ -7,7 +7,7 @@ homepage:
       enabled: true
       tls:
         - hosts:
-          - {{ .Values.ingress.host }}
+          - portal.[{ env "env_domain" }]
           secretName: tls-traefik-ingress-dns
       hosts:
         - host: portal.[{ env "env_domain" }]
@@ -18,7 +18,7 @@ homepage:
   config:
     bookmarks:
     services:
-    [{- env "metallb" | nindent 6 }]
+    [{- env "homepage_custom_services" | nindent 6 }]
     widgets:
       - kubernetes:
           cluster:

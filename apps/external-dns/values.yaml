@@ -1,0 +1,11 @@
+
+private: 
+  enabled: [{ env "external_dns_private_records" }]
+
+public:
+  enabled: [{ env "external_dns_public_records" }]
+  domain: [{ env "env_domain" }]
+  email: [{ env "acme_certs.cloud_email"}]
+  secretRef: [{ env "acme_certs.cloud_secret"}]
+  secretKey: [{ env "acme_certs.cloud_secretKey"}]
+  remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]

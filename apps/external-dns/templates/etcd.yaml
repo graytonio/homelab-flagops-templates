@@ -1,0 +1,9 @@
+{{ if .Values.public.enabled }}
+apiVersion: "etcd.database.coreos.com/v1beta2"
+kind: "EtcdCluster"
+metadata:
+  name: "external-etcd-cluster"
+spec:
+  size: 3
+  version: "3.5.13"
+{{ end }}

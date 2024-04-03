@@ -38,7 +38,7 @@ spec:
         image: registry.k8s.io/external-dns/external-dns:v0.14.1
         args:
         - --source=ingress
-        - --label-filter="access==public"
+        - --label-filter=access==public
         - --domain-filter={{ .Values.public.domain }}
         - --provider=cloudflare
         - --cloudflare-proxied

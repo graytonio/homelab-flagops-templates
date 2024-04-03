@@ -19,3 +19,7 @@ applications:
   homepage:
   [{- env "homepage" | nindent 4 }]
 [{ end }]
+[{- if env "external_dns_enabled"}]
+  external_dns:
+  [{- env "external_dns" | nindent 4 }]
+[{ end }]

@@ -43,7 +43,7 @@ spec:
         - --cloudflare-proxied
         - --policy=upsert-only
         env:
-        - name: CF_API_KEY
+        - name: CF_API_TOKEN
           valueFrom:
             secretKeyRef:
               name: {{ .Values.public.secretRef }}

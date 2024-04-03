@@ -44,8 +44,9 @@ spec:
         env:
         - name: CF_API_KEY
           valueFrom:
-            name: {{ .Values.public.secretRef }}
-            key: {{ .Values.public.secretKey }}
+            secretKeyRef:
+              name: {{ .Values.public.secretRef }}
+              key: {{ .Values.public.secretKey }}
         - name: CF_API_EMAIL
           value: {{ .Values.public.email }}
 {{ end }}

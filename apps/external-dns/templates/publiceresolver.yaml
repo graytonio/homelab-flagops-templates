@@ -41,6 +41,7 @@ spec:
         - --domain-filter={{ .Values.public.domain }}
         - --provider=cloudflare
         - --cloudflare-proxied
+        - --policy=upsert-only
         env:
         - name: CF_API_KEY
           valueFrom:

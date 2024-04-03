@@ -3,12 +3,3 @@ name: external-dns-operator
 description: Manages private DNS records for exposed internal services
 type: application
 version: 0.1.0
-dependencies:
-  - name: etcd-operator
-    repository: stable
-    version: 0.11.2
-    condition: private.enabled
-  - name: coredns
-    repository: https://coredns.github.io/helm
-    version: 1.29.0
-    condition: private.enabled

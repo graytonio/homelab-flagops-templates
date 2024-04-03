@@ -1,4 +1,4 @@
-{{ if or .Values.public.enabled .Values.private.enabled }}
+{{ if or .Values.public.enabled }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

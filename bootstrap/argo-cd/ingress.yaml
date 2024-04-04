@@ -20,6 +20,7 @@ spec:
   tls:
     - hosts:
       - argocd.[{ env "env_domain" }]
+      secretName: tls-argocd-ingress-dns
   rules:
   - host: argocd.[{ env "env_domain" }]
     http:

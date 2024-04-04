@@ -27,7 +27,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: traefik-api
+            name: traefik-api-public
             port:
               name: traefik
 ---
@@ -47,7 +47,7 @@ metadata:
     name: traefik-dashboard-private
     access: private
 spec:
-  ingressClassName: private-traffic
+  ingressClassName: private-traffic-private
   tls:
     - hosts:
       - {{ .Values.privateingress.host }}

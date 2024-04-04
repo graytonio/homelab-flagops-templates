@@ -9,7 +9,7 @@ metadata:
     gethomepage.dev/description: Traefik Dashboard
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik.png
-    gethomepage.dev/name: Traefik
+    gethomepage.dev/name: Traefik Public
   labels:
     name: traefik-dashboard-private
     access: private
@@ -42,12 +42,12 @@ metadata:
     gethomepage.dev/description: Traefik Dashboard
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik.png
-    gethomepage.dev/name: Traefik
+    gethomepage.dev/name: Traefik Private
   labels:
     name: traefik-dashboard-private
     access: private
 spec:
-  ingressClassName: private-traffic-private
+  ingressClassName: private-traffic
   tls:
     - hosts:
       - {{ .Values.privateingress.host }}
@@ -60,6 +60,6 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: traefik-api
+            name: traefik-api-private
             port:
               name: traefik

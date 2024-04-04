@@ -14,10 +14,11 @@ privateingress:
   host: traefik.private.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
-    annotation:
-      app.kubernetes.io/instance: private-ingress
     labels:
+      app.kubernetes.io/instance: private-ingress
       access: private
+    podLabels:
+      app.kubernetes.io/instance: private-ingress
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
@@ -35,15 +36,15 @@ privateingress:
       publishedService:
         enabled: true
         
-
 publicingress:
   host: traefik.public.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
-    annotation:
-      app.kubernetes.io/instance: public-ingress
     labels:
+      app.kubernetes.io/instance: public-ingress
       access: public
+    podLabels:
+      app.kubernetes.io/instance: public-ingress
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
@@ -61,6 +62,5 @@ publicingress:
       publishedService:
         enabled: true
         
-
 cert-manager:
   installCRDs: true

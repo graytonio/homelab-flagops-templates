@@ -38,7 +38,7 @@ spec:
         image: registry.k8s.io/external-dns/external-dns:v0.14.1
         args:
         - --source=ingress
-        {{- if .Values.public.customRecords.enabled }}
+        {{- if .Values.public.customEndpoints.enabled }}
         - --source=crd
         {{- end }}
         - --label-filter=access==public

@@ -6,7 +6,7 @@ metadata:
   name: {{ . }}-dns
 spec:
   endpoints:
-  - dnsName: {{ . }}.{{ .Values.public.domain }}
+  - dnsName: {{ . }}.{{ $.Values.public.domain }}
     recordTTL: 1
     recordType: CNAME
     targets:

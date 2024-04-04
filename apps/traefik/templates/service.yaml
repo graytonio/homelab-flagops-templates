@@ -5,7 +5,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/instance: public-ingress
+    app.kubernetes.io/name: publicingress
   ports:
     - port: 9000
       name: traefik
@@ -18,7 +18,7 @@ metadata:
 spec:
   type: ClusterIP
   selector:
-    app.kubernetes.io/instance: private-ingress
+    app.kubernetes.io/name: privateingress
   ports:
     - port: 9000
       name: traefik

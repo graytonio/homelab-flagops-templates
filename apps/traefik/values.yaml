@@ -17,8 +17,6 @@ privateingress:
     labels:
       app.kubernetes.io/instance: private-ingress
       access: private
-    podLabels:
-      app.kubernetes.io/instance: private-ingress
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
@@ -43,8 +41,6 @@ publicingress:
     labels:
       app.kubernetes.io/instance: public-ingress
       access: public
-    podLabels:
-      app.kubernetes.io/instance: public-ingress
   podDisruptionBudget:
     enabled: true
     minAvailable: 1

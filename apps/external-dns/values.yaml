@@ -1,3 +1,5 @@
+# TODO Add private resolver + server (Adguard)
+
 public:
   enabled: [{ env "external_dns_public_records_enabled" }]
   domain: [{ env "env_domain" }]

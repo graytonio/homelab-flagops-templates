@@ -16,6 +16,7 @@ metadata:
     access: private
     name: argocd-ui
 spec:
+  ingressClassName: private-traffic
   tls:
     - hosts:
       - argocd.[{ env "env_domain" }]

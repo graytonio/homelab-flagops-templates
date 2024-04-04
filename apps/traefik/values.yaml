@@ -10,17 +10,46 @@ cloudflare:
   remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
   domain: [{ env "env_domain" }]
 
-ingress:
-  host: traefik.[{ env "env_domain" }]
-
-traefik:
+privateingress:
+  host: traefik.private.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
+    annotation:
+      app.kubernetes.io/instance: private-ingress
+    labels:
+      access: private
   podDisruptionBudget:
     enabled: true
     minAvailable: 1
   additionalArguments:
     - --api.insecure=true
+  ingressClass:
+    name: private-traffic
+    isDefaultClass: true
+  ingressRoute:
+    dashboard:
+      enabled: false
+  providers:
+    kubernetesIngress:
+      publishedService:
+        enabled: true
+
+publicingress:
+  host: traefik.public.[{ env "env_domain" }]
+  deployment:
+    kind: DaemonSet
+    annotation:
+      app.kubernetes.io/instance: public-ingress
+    labels:
+      access: public
+  podDisruptionBudget:
+    enabled: true
+    minAvailable: 1
+  additionalArguments:
+    - --api.insecure=true
+  ingressClass:
+    name: public-traffic
+    isDefaultClass: false
   ingressRoute:
     dashboard:
       enabled: false

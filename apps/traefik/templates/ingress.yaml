@@ -1,6 +1,39 @@
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
+  name: traefik-dashboard-public
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Traefik Dashboard
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: traefik.png
+    gethomepage.dev/name: Traefik
+  labels:
+    name: traefik-dashboard
+    access: public
+spec:
+  ingressClassName: private-traffic
+  tls:
+    - hosts:
+      - {{ .Values.publicingress.host }}
+      secretName: tls-traefik-public-ingress-dns
+  rules:
+  - host: {{ .Values.publicingress.host }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: traefik-api
+            port:
+              name: traefik
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
   name: traefik-dashboard
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
@@ -12,13 +45,15 @@ metadata:
     gethomepage.dev/name: Traefik
   labels:
     name: traefik-dashboard
+    access: public
 spec:
+  ingressClassName: private-traffic
   tls:
     - hosts:
-      - {{ .Values.ingress.host }}
-      secretName: tls-traefik-ingress-dns
+      - {{ .Values.privateingress.host }}
+      secretName: tls-traefik-private-ingress-dns
   rules:
-  - host: {{ .Values.ingress.host }}
+  - host: {{ .Values.privateingress.host }}
     http:
       paths:
       - path: /

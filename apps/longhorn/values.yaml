@@ -9,6 +9,7 @@ longhorn:
     jobEnabled: false
 
   ingress:
+    ingressClassName: private-traffic
     enabled: true
     tls: true
     tlsSecret: tls-longhorn-ingress-dns

@@ -5,6 +5,7 @@ homepage:
   ingress:
     main:
       enabled: true
+      ingressClassName: private-traffic
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt
         traefik.ingress.kubernetes.io/router.entrypoints: websecure

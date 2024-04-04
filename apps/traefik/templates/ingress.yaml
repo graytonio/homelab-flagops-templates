@@ -11,8 +11,8 @@ metadata:
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik
   labels:
-    name: traefik-dashboard
-    access: public
+    name: traefik-dashboard-private
+    access: private
 spec:
   ingressClassName: private-traffic
   tls:
@@ -34,7 +34,7 @@ spec:
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
-  name: traefik-dashboard
+  name: traefik-dashboard-private
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
@@ -44,8 +44,8 @@ metadata:
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik
   labels:
-    name: traefik-dashboard
-    access: public
+    name: traefik-dashboard-private
+    access: private
 spec:
   ingressClassName: private-traffic
   tls:

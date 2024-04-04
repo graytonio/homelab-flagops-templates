@@ -1,7 +1,10 @@
 public:
   enabled: [{ env "external_dns_public_records_enabled" }]
   domain: [{ env "env_domain" }]
+  target: [{ env "external_dns_record_target" }]
   email: [{ env "acme_certs.cloud_email"}]
   secretRef: [{ env "acme_certs.cloud_secret"}]
   secretKey: [{ env "acme_certs.cloud_secretKey"}]
   remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
+
+  customEndpoints: [{- env "custom_external_dns_records" | nindent 4 }]

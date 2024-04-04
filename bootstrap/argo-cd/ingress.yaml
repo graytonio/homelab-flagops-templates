@@ -3,6 +3,7 @@ kind: Ingress
 metadata:
   name: argocd-ui
   annotations:
+    external-dns.alpha.kubernetes.io/hostname: argocd.[{ env "env_domain" }]
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     gethomepage.dev/enabled: "true"
@@ -12,6 +13,7 @@ metadata:
     gethomepage.dev/name: ArgoCD
     gethomepage.dev/pod-selector: " "
   labels:
+    access: private
     name: argocd-ui
 spec:
   tls:

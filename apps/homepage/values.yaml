@@ -12,7 +12,7 @@ homepage:
       tls:
         - hosts:
           - portal.[{ env "env_domain" }]
-          secretName: tls-traefik-ingress-dns
+          secretName: tls-homepage-ingress-dns
       hosts:
         - host: portal.[{ env "env_domain" }]
           paths: 

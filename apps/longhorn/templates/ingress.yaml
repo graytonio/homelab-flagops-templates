@@ -1,0 +1,35 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    gethomepage.dev/description: Longhorn Dashboard
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: longhorn.png
+    gethomepage.dev/name: Longhorn
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+  labels:
+    access: private
+    app: longhorn-ingress
+    app.kubernetes.io/instance: production-longhorn-longhorn
+    app.kubernetes.io/managed-by: Helm
+    app.kubernetes.io/name: longhorn
+  name: longhorn-ingress
+spec:
+  ingressClassName: private-traffic
+  rules:
+  - host: {{ .Values.longhorn.ingress.host }}
+    http:
+      paths:
+      - backend:
+          service:
+            name: longhorn-frontend
+            port:
+              number: 80
+        path: /
+        pathType: ImplementationSpecific
+  tls:
+  - hosts:
+    - {{ .Values.longhorn.ingress.host }}
+    secretName: tls-longhorn-ingress-dns

@@ -4,6 +4,8 @@ apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
   name: {{ . }}-dns
+  labels:
+    access: public
 spec:
   endpoints:
   - dnsName: {{ . }}.{{ $.Values.public.domain }}

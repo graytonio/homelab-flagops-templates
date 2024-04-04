@@ -1,4 +1,4 @@
-{{- range .Values.public.customEndpoints }}
+{{- range .Values.public.customEndpoints.records }}
 ---
 apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint

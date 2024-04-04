@@ -7,4 +7,6 @@ public:
   secretKey: [{ env "acme_certs.cloud_secretKey"}]
   remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
 
-  customEndpoints: [{- env "custom_external_dns_records" | nindent 4 }]
+  customEndpoints: 
+    enabled: [{ env "custom_external_dns_records_enabled" }]
+    records: [{- env "custom_external_dns_records" | nindent 6 }]

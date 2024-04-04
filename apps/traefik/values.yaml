@@ -31,9 +31,10 @@ privateingress:
       enabled: false
   providers:
     kubernetesIngress:
+      labelSelector: "access=private"
       publishedService:
         enabled: true
-        labelSelector: "access=private"
+        
 
 publicingress:
   host: traefik.public.[{ env "env_domain" }]
@@ -56,9 +57,10 @@ publicingress:
       enabled: false
   providers:
     kubernetesIngress:
+      labelSelector: "access=public"
       publishedService:
         enabled: true
-        labelSelector: "access=public"
+        
 
 cert-manager:
   installCRDs: true

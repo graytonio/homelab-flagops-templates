@@ -3,3 +3,14 @@ name: external-dns-operator
 description: Manages private DNS records for exposed internal services
 type: application
 version: 0.1.0
+dependencies:
+  - name: external-dns
+    repository: https://charts.bitnami.com/bitnami
+    version: 7.1.2
+    alias: public
+    condition: public.enabled
+
+  - name: external-dns
+    repository: https://charts.bitnami.com/bitnami
+    version: 7.1.2
+    alias: private

@@ -1,14 +1,71 @@
-# TODO Add private resolver + server (Adguard)
+private:
+  crds:
+    create: true
+  provider: webhook
+  policy: upsert-only
+  labelFilter: access==private
+  sources:
+    - ingress
+[{- if env "custom_internal_dns_records_enabled" }]
+    - crd
+[{- end }]
+  extraArgs:
+    webhook-provider-url: http://localhost:8888
+  sidecars:
+  - name: adguard-webhook
+    image: ghcr.io/muhlba91/external-dns-provider-adguard:v5.0.0
+    ports:
+      - containerPort: 8888
+        name: http
+    livenessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      initialDelaySeconds: 10
+      timeoutSeconds: 5
+    readinessProbe:
+      httpGet:
+        path: /healthz
+        port: http
+      initialDelaySeconds: 10
+      timeoutSeconds: 5
+    env:
+      - name: LOG_LEVEL
+        value: debug
+      - name: ADGUARD_URL
+        value: http://adguard.external-dns.svc.local
+      - name: ADGUARD_USER
+        value: external-dns
+      - name: ADGUARD_PASSWORD
+        value: password
+      - name: SERVER_HOST
+        value: "0.0.0.0"
+      - name: DRY_RUN
+        value: "false"
+
+  customEndpoints: 
+    enabled: [{ env "custom_internal_dns_records_enabled" }]
+    domain: [{ env "env_domain" }]
+    target: [{ env "internal_dns_record_target" }]
+    records: [{- env "custom_internal_dns_records" | nindent 6 }]
 
 public:
   enabled: [{ env "external_dns_public_records_enabled" }]
-  domain: [{ env "env_domain" }]
-  target: [{ env "external_dns_record_target" }]
-  email: [{ env "acme_certs.cloud_email"}]
-  secretRef: [{ env "acme_certs.cloud_secret"}]
-  secretKey: [{ env "acme_certs.cloud_secretKey"}]
-  remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
-
-  customEndpoints: 
+  provider: cloudflare
+  cloudflare:
+    secretName: [{ env "acme_certs.cloud_secret"}]
+    remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
+    email: [{ env "acme_certs.cloud_email"}]
+    proxied: true
+  policy: upsert-only
+  labelFilter: access==public
+  sources:
+    - ingress
+[{- if env "custom_external_dns_records_enabled" }]
+    - crd
+[{- end }]
+  customEndpoints:
     enabled: [{ env "custom_external_dns_records_enabled" }]
+    domain: [{ env "env_domain" }]
+    target: [{ env "external_dns_record_target" }]
     records: [{- env "custom_external_dns_records" | nindent 6 }]

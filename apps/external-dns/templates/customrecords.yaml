@@ -1,3 +1,4 @@
+{{- if .Values.public.customEndpoints.enabled }}
 {{- range .Values.public.customEndpoints.records }}
 ---
 apiVersion: externaldns.k8s.io/v1alpha1
@@ -8,9 +9,26 @@ metadata:
     access: public
 spec:
   endpoints:
-  - dnsName: {{ . }}.{{ $.Values.public.domain }}
+  - dnsName: {{ . }}.{{ $.Values.public.customEndpoints.domain }}
     recordTTL: 1
     recordType: CNAME
     targets:
-    - {{ $.Values.public.target }}
+    - {{ $.Values.public.customEndpoints.target }}
+{{- end }}
+{{- if .Values.private.customEndpoints.enabled }}
+{{- range .Values.private.customEndpoints.records }}
+---
+apiVersion: externaldns.k8s.io/v1alpha1
+kind: DNSEndpoint
+metadata:
+  name: {{ . }}-dns
+  labels:
+    access: private
+spec:
+  endpoints:
+  - dnsName: {{ . }}.{{ $.Values.private.customEndpoints.domain }}
+    recordTTL: 1
+    recordType: CNAME
+    targets:
+    - {{ $.Values.private.customEndpoints.target }}
 {{- end }}

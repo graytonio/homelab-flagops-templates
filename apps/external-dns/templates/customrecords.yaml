@@ -15,6 +15,7 @@ spec:
     targets:
     - {{ $.Values.public.customEndpoints.target }}
 {{- end }}
+{{- end }}
 {{- if .Values.private.customEndpoints.enabled }}
 {{- range .Values.private.customEndpoints.records }}
 ---
@@ -31,4 +32,5 @@ spec:
     recordType: CNAME
     targets:
     - {{ $.Values.private.customEndpoints.target }}
+{{- end }}
 {{- end }}

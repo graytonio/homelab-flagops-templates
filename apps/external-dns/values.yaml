@@ -1,6 +1,6 @@
 adguard:
   global:
-    nameOverride: external-dns-adguard
+    fullnameOverride: external-dns-adguard
   controllers:
     main:
       enabled: true

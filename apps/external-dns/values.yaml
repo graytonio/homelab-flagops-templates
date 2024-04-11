@@ -1,4 +1,6 @@
 adguard:
+  global:
+    nameOverride: external-dns-adguard
   controllers:
     main:
       enabled: true
@@ -101,7 +103,7 @@ private:
       - name: LOG_LEVEL
         value: debug
       - name: ADGUARD_URL
-        value: http://adguard.external-dns.svc.local
+        value: http://external-dns-adguard.external-dns.svc.local
       - name: ADGUARD_USER
         value: external-dns
       - name: ADGUARD_PASSWORD

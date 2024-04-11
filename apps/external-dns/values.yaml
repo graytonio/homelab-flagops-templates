@@ -93,13 +93,13 @@ private:
       httpGet:
         path: /healthz
         port: http
-      initialDelaySeconds: 10
+      initialDelaySeconds: 30
       timeoutSeconds: 5
     readinessProbe:
       httpGet:
         path: /healthz
         port: http
-      initialDelaySeconds: 10
+      initialDelaySeconds: 30
       timeoutSeconds: 5
     env:
       - name: LOG_LEVEL

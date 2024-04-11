@@ -1,6 +1,8 @@
 private:
   crds:
     create: true
+  rbac:
+    create: true
   provider: webhook
   policy: upsert-only
   labelFilter: access==private
@@ -51,6 +53,8 @@ private:
 
 public:
   enabled: [{ env "external_dns_public_records_enabled" }]
+  rbac:
+    create: true
   provider: cloudflare
   cloudflare:
     secretName: [{ env "acme_certs.cloud_secret"}]

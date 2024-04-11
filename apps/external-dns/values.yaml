@@ -113,7 +113,7 @@ private:
       - name: SERVER_HOST
         value: "0.0.0.0"
       - name: DRY_RUN
-        value: "false"
+        value: "true"
 
   customEndpoints: 
     enabled: [{ env "custom_internal_dns_records_enabled" }]

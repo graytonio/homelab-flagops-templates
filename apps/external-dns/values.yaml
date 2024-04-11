@@ -124,8 +124,7 @@ private:
 public:
   enabled: [{ env "external_dns_public_records_enabled" }]
   crd:
-    apiversion: externaldns.k8s.io/v1alpha1
-    kind: dnsendpoint
+    create: true
   rbac:
     create: true
   provider: cloudflare

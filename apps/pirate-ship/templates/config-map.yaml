@@ -10,7 +10,7 @@ data:
             <SslPort>9898</SslPort>
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
-            <ApiKey>87ef9531ddf4422e89d2fee8babbaabb</ApiKey>
+            <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
             <AuthenticationMethod>Basic</AuthenticationMethod>
             <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>master</Branch>
@@ -20,4 +20,8 @@ data:
             <UrlBase></UrlBase>
             <InstanceName>Radarr</InstanceName>
             <UpdateMechanism>Docker</UpdateMechanism>
+            <PostgresUser>pirateship</PostgresUser>
+            <PostgresPassword>pirateshippassword</PostgresPassword>
+            <PostgresPort>5432</PostgresPort>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
         </Config>

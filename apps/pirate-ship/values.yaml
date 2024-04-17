@@ -1,3 +1,6 @@
+global:
+  apiKey: 87ef9531ddf4422e89d2fee8babbaabb
+
 radarr:
   global:
     fullnameOverride: pirate-ship-radarr

@@ -20,8 +20,64 @@ data:
             <UrlBase></UrlBase>
             <InstanceName>Radarr</InstanceName>
             <UpdateMechanism>Docker</UpdateMechanism>
-            <PostgresUser>pirateship</PostgresUser>
-            <PostgresPassword>pirateshippassword</PostgresPassword>
+            <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
+            <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
+            <PostgresPort>5432</PostgresPort>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+        </Config>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: sonarr-configxml
+data:
+    config.xml: |
+        <Config>
+            <BindAddress>*</BindAddress>
+            <Port>8989</Port>
+            <SslPort>9898</SslPort>
+            <EnableSsl>False</EnableSsl>
+            <LaunchBrowser>True</LaunchBrowser>
+            <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
+            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
+            <Branch>main</Branch>
+            <LogLevel>info</LogLevel>
+            <SslCertPath></SslCertPath>
+            <SslCertPassword></SslCertPassword>
+            <UrlBase></UrlBase>
+            <InstanceName>Sonarr</InstanceName>
+            <UpdateMechanism>Docker</UpdateMechanism>
+            <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
+            <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
+            <PostgresPort>5432</PostgresPort>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+        </Config>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: prowlarr-configxml
+data:
+    config.xml: |
+        <Config>
+            <BindAddress>*</BindAddress>
+            <Port>9696</Port>
+            <SslPort>6969</SslPort>
+            <EnableSsl>False</EnableSsl>
+            <LaunchBrowser>True</LaunchBrowser>
+            <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
+            <AuthenticationMethod>None</AuthenticationMethod>
+            <AuthenticationRequired>Enabled</AuthenticationRequired>
+            <Branch>master</Branch>
+            <LogLevel>info</LogLevel>
+            <SslCertPath></SslCertPath>
+            <SslCertPassword></SslCertPassword>
+            <UrlBase></UrlBase>
+            <InstanceName>Prowlarr</InstanceName>
+            <UpdateMechanism>Docker</UpdateMechanism>
+            <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
+            <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
         </Config>

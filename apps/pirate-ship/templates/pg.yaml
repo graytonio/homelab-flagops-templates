@@ -8,11 +8,15 @@ spec:
     size: 10Gi
   numberOfInstances: 1
   users:
-    pirateship:  # database owner
+    {{ .Values.global.pgUser }}:  # database owner
     - superuser
     - createdb
   databases:
-    radarr-main: pirateship
-    radarr-log: pirateship
+    radarr-main: {{ .Values.global.pgUser }}
+    radarr-log: {{ .Values.global.pgUser }}
+    sonarr-main: {{ .Values.global.pgUser }}
+    sonarr-log: {{ .Values.global.pgUser }}
+    prowlarr-main: {{ .Values.global.pgUser }}
+    prowlarr-log: {{ .Values.global.pgUser }}
   postgresql:
     version: "14"

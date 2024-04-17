@@ -1,5 +1,7 @@
 global:
   apiKey: 87ef9531ddf4422e89d2fee8babbaabb
+  pgUser: pirateship
+  pgPassword: pirateshippassword
 
 radarr:
   global:
@@ -64,7 +66,17 @@ sonarr:
       ports:
         http:
           port: 8989
-
+  persistence:
+    config:
+      enabled: true
+      type: configMap
+      name: sonarr-configxml
+      advancedMounts:
+        main:
+          main:
+          - path: /config/config.xml
+            readOnly: false
+            subPath: config.xml
 prowlarr:
   global:
     fullnameOverride: pirate-ship-prowlarr

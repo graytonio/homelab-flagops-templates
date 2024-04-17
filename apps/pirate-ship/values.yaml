@@ -1,0 +1,25 @@
+radarr:
+  global:
+    fullnameOverride: pirate-ship-radarr
+  controllers:
+    main: 
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: linuxserver/radarr
+            tag: 5.4.6
+            pullPolicy: IfNotPresent
+          env:
+            UMASK_SET: 022
+            TZ: America/New_York
+            PUID: 1000
+            PGID: 1000
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 7878

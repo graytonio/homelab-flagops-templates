@@ -1,0 +1,26 @@
+apiVersion: v2
+name: pirate-ship
+description: Manages servarr media management services
+type: application
+version: 0.1.0
+dependencies:
+  - name: app-template
+    version: 3.1.0
+    repository: https://bjw-s.github.io/helm-charts/
+    alias: radarr
+  # - name: app-template
+  #   version: 3.1.0
+  #   repository: https://bjw-s.github.io/helm-charts/
+  #   alias: sonarr
+  # - name: app-template
+  #   version: 3.1.0
+  #   repository: https://bjw-s.github.io/helm-charts/
+  #   alias: prowlarr
+  # - name: app-template
+  #   version: 3.1.0
+  #   repository: https://bjw-s.github.io/helm-charts/
+  #   alias: sabnzbd
+  # - name: app-template
+  #   version: 3.1.0
+  #   repository: https://bjw-s.github.io/helm-charts/
+  #   alias: overseerr

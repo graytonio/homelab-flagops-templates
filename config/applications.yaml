@@ -23,3 +23,7 @@ applications:
   external_dns:
   [{- env "external_dns" | nindent 4 }]
 [{ end }]
+[{- if env "pirate_ship_enabled"}]
+  pirate_ship:
+  [{- env "pirate_ship" | nindent 4 }]
+[{ end }]

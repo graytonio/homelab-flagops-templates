@@ -56,14 +56,14 @@ adguard:
   
   persistence:
     config:
-      enabled: false
+      enabled: true
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
       size: 1Gi
       globalMounts:
         - path: /opt/adguardhome/conf
     data:
-      enabled: false
+      enabled: true
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
       size: 1Gi

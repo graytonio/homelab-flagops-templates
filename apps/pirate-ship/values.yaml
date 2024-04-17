@@ -30,9 +30,10 @@ radarr:
       name: radarr-configxml
       advancedMounts:
         main:
-        - path: /config/config.xml
-          readOnly: false
-          subPath: config.xml
+          main:
+          - path: /config/config.xml
+            readOnly: false
+            subPath: config.xml
 
 
 sonarr:

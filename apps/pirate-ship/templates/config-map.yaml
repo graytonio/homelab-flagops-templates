@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: radarr-configxml
+data:
+    config.xml: |
+        <Config>
+            <BindAddress>*</BindAddress>
+            <Port>7878</Port>
+            <SslPort>9898</SslPort>
+            <EnableSsl>False</EnableSsl>
+            <LaunchBrowser>True</LaunchBrowser>
+            <ApiKey>87ef9531ddf4422e89d2fee8babbaabb</ApiKey>
+            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
+            <Branch>master</Branch>
+            <LogLevel>info</LogLevel>
+            <SslCertPath></SslCertPath>
+            <SslCertPassword></SslCertPassword>
+            <UrlBase></UrlBase>
+            <InstanceName>Radarr</InstanceName>
+            <UpdateMechanism>Docker</UpdateMechanism>
+        </Config>

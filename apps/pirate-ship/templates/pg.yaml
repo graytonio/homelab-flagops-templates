@@ -1,0 +1,18 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: pirate-ship-postgresql
+spec:
+  teamId: "pirate-ship"
+  volume:
+    size: 10Gi
+  numberOfInstances: 1
+  users:
+    pirateship:  # database owner
+    - superuser
+    - createdb
+  databases:
+    radarr-main: pirateship
+    radarr-log: pirateship
+  postgresql:
+    version: "14"

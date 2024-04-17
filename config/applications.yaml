@@ -27,3 +27,7 @@ applications:
   pirate_ship:
   [{- env "pirate_ship" | nindent 4 }]
 [{ end }]
+  postgresql_operator:
+    app: postgresql
+    identifier: operator
+    namespace: postgresql-operator

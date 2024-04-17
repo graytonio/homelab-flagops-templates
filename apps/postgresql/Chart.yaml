@@ -1,0 +1,9 @@
+apiVersion: v2
+name: postgresql-operator
+description: Manages postgresql servers in kubernetes
+type: application
+version: 0.1.0
+dependencies:
+  - name: postgres-operator
+    repository: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+    version: 1.11.0

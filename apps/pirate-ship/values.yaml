@@ -23,3 +23,116 @@ radarr:
       ports:
         http:
           port: 7878
+  persistence:
+    config:
+      enabled: true
+      type: configMap
+      name: radarr-configxml
+      advancedMounts:
+        main:
+        - path: /config/config.xml
+          readOnly: false
+          subPath: config.xml
+
+
+sonarr:
+  global:
+    fullnameOverride: pirate-ship-sonarr
+  controllers:
+    main: 
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: linuxserver/sonarr
+            tag: 4.0.4
+            pullPolicy: IfNotPresent
+          env:
+            UMASK_SET: 022
+            TZ: America/New_York
+            PUID: 1000
+            PGID: 1000
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 8989
+
+prowlarr:
+  global:
+    fullnameOverride: pirate-ship-prowlarr
+  controllers:
+    main: 
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: linuxserver/prowlarr
+            tag: 1.15.0
+            pullPolicy: IfNotPresent
+          env:
+            UMASK_SET: 022
+            TZ: America/New_York
+            PUID: 1000
+            PGID: 1000
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 9696
+
+sabnzbd:
+  global:
+    fullnameOverride: pirate-ship-sabnzbd
+  controllers:
+    main: 
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: linuxserver/sabnzbd
+            tag: 4.2.3
+            pullPolicy: IfNotPresent
+          env:
+            TZ: America/New_York
+            PUID: 1000
+            PGID: 1000
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 8080
+
+overseerr:
+  global:
+    fullnameOverride: pirate-ship-overseerr
+  controllers:
+    main: 
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          image:
+            repository: linuxserver/overseerr
+            tag: v1.33.2-ls102
+            pullPolicy: IfNotPresent
+          env:
+            TZ: America/New_York
+            PUID: 1000
+            PGID: 1000
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 5055

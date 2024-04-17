@@ -111,6 +111,17 @@ prowlarr:
       ports:
         http:
           port: 9696
+  persistence:
+    config:
+      enabled: true
+      type: configMap
+      name: prowlarr-configxml
+      advancedMounts:
+        main:
+          main:
+          - path: /config/config.xml
+            readOnly: false
+            subPath: config.xml
 
 sabnzbd:
   global:

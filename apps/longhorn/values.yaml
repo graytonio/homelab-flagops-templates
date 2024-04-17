@@ -1,6 +1,6 @@
 longhorn:
   persistence:
-    defaultClass: true
+    defaultClass: false
 
   helmPreUpgradeCheckerJob:
     enabled: false

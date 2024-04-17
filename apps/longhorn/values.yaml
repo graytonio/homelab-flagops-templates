@@ -1,6 +1,6 @@
 longhorn:
   persistence:
-    defaultClass: false
+    defaultClass: [{ env "longhorn_storageclass_enabled" }]
 
   helmPreUpgradeCheckerJob:
     enabled: false

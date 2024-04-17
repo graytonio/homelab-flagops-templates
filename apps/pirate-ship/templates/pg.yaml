@@ -12,11 +12,11 @@ spec:
     - superuser
     - createdb
   databases:
-    radarr-main: {{ .Values.global.pgUser }}
-    radarr-log: {{ .Values.global.pgUser }}
-    sonarr-main: {{ .Values.global.pgUser }}
-    sonarr-log: {{ .Values.global.pgUser }}
-    prowlarr-main: {{ .Values.global.pgUser }}
-    prowlarr-log: {{ .Values.global.pgUser }}
+    radarrmain: {{ .Values.global.pgUser }}
+    radarrlog: {{ .Values.global.pgUser }}
+    sonarrmain: {{ .Values.global.pgUser }}
+    sonarrlog: {{ .Values.global.pgUser }}
+    prowlarrmain: {{ .Values.global.pgUser }}
+    prowlarrlog: {{ .Values.global.pgUser }}
   postgresql:
     version: "14"

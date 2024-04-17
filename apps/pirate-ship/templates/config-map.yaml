@@ -24,6 +24,8 @@ data:
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresMainDb>radarrmain</PostgresMainDb>
+            <PostgresLogDb>radarrlog</PostgresLogDb>
         </Config>
 ---
 apiVersion: v1
@@ -52,6 +54,8 @@ data:
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresMainDb>sonarrmain</PostgresMainDb>
+            <PostgresLogDb>sonarrlog</PostgresLogDb>
         </Config>
 ---
 apiVersion: v1
@@ -80,4 +84,6 @@ data:
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresMainDb>prowlarrmain</PostgresMainDb>
+            <PostgresLogDb>prowlarrlog</PostgresLogDb>
         </Config>

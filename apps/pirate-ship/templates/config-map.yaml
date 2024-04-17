@@ -23,7 +23,7 @@ data:
             <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
-            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>radarrmain</PostgresMainDb>
             <PostgresLogDb>radarrlog</PostgresLogDb>
         </Config>
@@ -53,7 +53,7 @@ data:
             <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
-            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>sonarrmain</PostgresMainDb>
             <PostgresLogDb>sonarrlog</PostgresLogDb>
         </Config>
@@ -83,7 +83,7 @@ data:
             <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
             <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
             <PostgresPort>5432</PostgresPort>
-            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.local</PostgresHost>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>prowlarrmain</PostgresMainDb>
             <PostgresLogDb>prowlarrlog</PostgresLogDb>
         </Config>

@@ -185,3 +185,11 @@ overseerr:
       ports:
         http:
           port: 5055
+  persistence:
+    config:
+      enabled: true
+      type: persistentVolumeClaim
+      accessMode: ReadWriteOnce
+      size: 1Gi
+      globalMounts:
+        - path: /config

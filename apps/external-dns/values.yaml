@@ -33,8 +33,11 @@ adguard:
           port: 53
     dns-tcp:
       controller: main
+      annotations:
+        metallb.universe.tf/allow-shared-ip: "adguard-dns"
       enabled: true
-      type: NodePort
+      type: LoadBalancer
+      loadBalancerIP: [{ env "external_dns_lbip" }]
       ports:
         dns-tcp:
           enabled: true
@@ -44,8 +47,11 @@ adguard:
       externalTrafficPolicy: Local
     dns-udp:
       controller: main
+      annotations:
+        metallb.universe.tf/allow-shared-ip: "adguard-dns"
       enabled: true
-      type: NodePort
+      type: LoadBalancer
+      loadBalancerIP: [{ env "external_dns_lbip" }]
       ports:
         dns-udp:
           enabled: true
@@ -120,7 +126,7 @@ private:
   customEndpoints: 
     enabled: [{ env "custom_internal_dns_records_enabled" }]
     domain: [{ env "env_domain" }]
-    target: [{ env "internal_dns_record_target" }]
+    target: [{ env "private_ingress_lbip" }]
     records: [{- env "custom_internal_dns_records" | nindent 6 }]
 
 public:

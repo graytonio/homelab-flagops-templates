@@ -1,9 +1,9 @@
 apiVersion: v2
-name: grafana-agent
-description: Grafana monitoring agent
+name: metallb
+description: Bare metal load balancer
 type: application
 version: 0.1.0
 dependencies:
-  - name: k8s-monitoring
-    repository: https://grafana.github.io/helm-charts
-    version: v1.0.1
+  - name: metallb
+    repository: https://metallb.github.io/metallb
+    version: 0.13.12

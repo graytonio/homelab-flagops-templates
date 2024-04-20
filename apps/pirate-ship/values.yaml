@@ -55,6 +55,18 @@ radarr:
         http:
           port: 7878
   persistence:
+[{- if env "media_nfs_volumes_enabled" }]
+    media:
+      enabled: true
+      type: nfs
+      server: [{ env "media_nfs_volumes.server" }]
+      path: [{ env "media_nfs_volumes.movies" }]
+    downloads:
+      enabled: true
+      type: nfs
+      server: [{ env "media_nfs_volumes.server" }]
+      path: [{ env "media_nfs_volumes.downloads" }]
+[{- end }]
     config:
       enabled: true
       type: configMap
@@ -118,6 +130,18 @@ sonarr:
         http:
           port: 8989
   persistence:
+[{- if env "media_nfs_volumes_enabled" }]
+    media:
+      enabled: true
+      type: nfs
+      server: [{ env "media_nfs_volumes.server" }]
+      path: [{ env "media_nfs_volumes.series" }]
+    downloads:
+      enabled: true
+      type: nfs
+      server: [{ env "media_nfs_volumes.server" }]
+      path: [{ env "media_nfs_volumes.downloads" }]
+[{- end }]
     config:
       enabled: true
       type: configMap
@@ -152,6 +176,7 @@ prowlarr:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+
   ingress:
     main:
       enabled: true
@@ -242,6 +267,13 @@ sabnzbd:
         http:
           port: 8080
   persistence:
+[{- if env "media_nfs_volumes_enabled" }]
+    downloads:
+      enabled: true
+      type: nfs
+      server: [{ env "media_nfs_volumes.server" }]
+      path: [{ env "media_nfs_volumes.downloads" }]
+[{- end }]
     config:
       enabled: true
       type: persistentVolumeClaim

@@ -71,8 +71,8 @@ data:
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
             <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
-            <AuthenticationMethod>None</AuthenticationMethod>
-            <AuthenticationRequired>Enabled</AuthenticationRequired>
+            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>master</Branch>
             <LogLevel>info</LogLevel>
             <SslCertPath></SslCertPath>

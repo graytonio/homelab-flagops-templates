@@ -24,6 +24,26 @@ radarr:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Radarr
+        gethomepage.dev/group: Pirate Ship
+        gethomepage.dev/icon: radarr.png
+        gethomepage.dev/name: Radarr
+      labels:
+        access: private
+      hosts:
+        - host: radarr.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
   service:
     main:
       controller: main
@@ -64,6 +84,26 @@ sonarr:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Sonarr
+        gethomepage.dev/group: Pirate Ship
+        gethomepage.dev/icon: sonarr.png
+        gethomepage.dev/name: Sonarr
+      labels:
+        access: private
+      hosts:
+        - host: sonarr.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
   service:
     main:
       controller: main
@@ -103,6 +143,26 @@ prowlarr:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Prowlarr
+        gethomepage.dev/group: Pirate Ship
+        gethomepage.dev/icon: prowlarr.png
+        gethomepage.dev/name: Prowlarr
+      labels:
+        access: private
+      hosts:
+        - host: prowlarr.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
   service:
     main:
       controller: main
@@ -142,6 +202,26 @@ sabnzbd:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Sabnzbd
+        gethomepage.dev/group: Pirate Ship
+        gethomepage.dev/icon: sabnzbd.png
+        gethomepage.dev/name: Sabnzbd
+      labels:
+        access: private
+      hosts:
+        - host: nzb.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
   service:
     main:
       controller: main
@@ -178,6 +258,26 @@ overseerr:
             TZ: America/New_York
             PUID: 1000
             PGID: 1000
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Overseerr
+        gethomepage.dev/group: Pirate Ship
+        gethomepage.dev/icon: overseerr.png
+        gethomepage.dev/name: Overseerr
+      labels:
+        access: public
+      hosts:
+        - host: netflix.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
   service:
     main:
       controller: main

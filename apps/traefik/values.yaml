@@ -30,6 +30,10 @@ privateingress:
   ingressRoute:
     dashboard:
       enabled: false
+  ports:
+    web:
+      redirectTo:
+        port: websecure
   providers:
     kubernetesIngress:
       labelSelector: "access=private"
@@ -56,6 +60,10 @@ publicingress:
   ingressRoute:
     dashboard:
       enabled: false
+  ports:
+    web:
+      redirectTo:
+        port: websecure
   providers:
     kubernetesIngress:
       labelSelector: "access=public"

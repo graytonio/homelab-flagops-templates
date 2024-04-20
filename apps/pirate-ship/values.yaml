@@ -7,6 +7,8 @@ radarr:
   global:
     fullnameOverride: pirate-ship-radarr
     nameOverride: radarr
+    securityContext:
+      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -25,8 +27,8 @@ radarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: 1000
-            PGID: 1000
+            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
+            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
   ingress:
     main:
       enabled: true
@@ -85,6 +87,8 @@ sonarr:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
+    securityContext:
+      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sonarr
   controllers:
@@ -100,8 +104,8 @@ sonarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: 1000
-            PGID: 1000
+            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
+            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
   ingress:
     main:
       enabled: true
@@ -220,6 +224,8 @@ sabnzbd:
   global:
     fullnameOverride: pirate-ship-sabnzbd
     nameOverride: sabnzbd
+    securityContext:
+      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -237,8 +243,8 @@ sabnzbd:
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York
-            PUID: 1000
-            PGID: 1000
+            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
+            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
   ingress:
     main:
       enabled: true

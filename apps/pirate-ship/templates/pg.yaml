@@ -6,7 +6,7 @@ spec:
   teamId: "pirate-ship"
   volume:
     size: 10Gi
-  numberOfInstances: 1
+  numberOfInstances: 3
   users:
     {{ .Values.global.pgUser }}:  # database owner
     - superuser

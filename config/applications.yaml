@@ -31,3 +31,7 @@ applications:
     app: postgresql
     identifier: operator
     namespace: postgresql-operator
+  grafana_agent:
+    app: observability
+    identifier: grafana-agent
+    namespace: observability

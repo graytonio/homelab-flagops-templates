@@ -1,0 +1,41 @@
+k8s-monitoring:
+  cluster:
+    name: dc-homelab
+  externalServices: [{ env "grafana_cloud_services" | nindent 4 }]
+  metrics:
+    enabled: true
+    cost:
+      enabled: true
+    node-exporter:
+      enabled: true
+  logs:
+    enabled: true
+    pod_logs:
+      enabled: true
+    cluster_events:
+      enabled: true
+  traces:
+    enabled: true
+  receivers:
+    grpc:
+      enabled: true
+    http:
+      enabled: true
+    zipkin:
+      enabled: true
+  opencost:
+    enabled: true
+    opencost:
+      exporter:
+        defaultClusterId: dc-homelab
+      prometheus:
+        external:
+          url: https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom
+  kube-state-metrics:
+    enabled: true
+  prometheus-node-exporter:
+    enabled: true
+  prometheus-operator-crds:
+    enabled: true
+  alloy: {}
+  alloy-logs: {}

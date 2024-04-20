@@ -8,7 +8,7 @@ radarr:
     fullnameOverride: pirate-ship-radarr
     nameOverride: radarr
     securityContext:
-      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
+      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -27,8 +27,8 @@ radarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
-            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
+            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
+            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
   ingress:
     main:
       enabled: true
@@ -88,7 +88,7 @@ sonarr:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     securityContext:
-      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
+      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sonarr
   controllers:
@@ -104,8 +104,8 @@ sonarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
-            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
+            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
+            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
   ingress:
     main:
       enabled: true
@@ -225,7 +225,7 @@ sabnzbd:
     fullnameOverride: pirate-ship-sabnzbd
     nameOverride: sabnzbd
     securityContext:
-      fsGroup: [{ default "1000" env "media_nfs_volumes.gid" }]
+      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -243,8 +243,8 @@ sabnzbd:
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York
-            PUID: [{ default "1000" env "media_nfs_volumes.uid" }]
-            PGID: [{ default "1000" env "media_nfs_volumes.gid" }]
+            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
+            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
   ingress:
     main:
       enabled: true

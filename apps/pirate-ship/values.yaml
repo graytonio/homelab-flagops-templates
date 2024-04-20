@@ -269,6 +269,7 @@ overseerr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: overseerr.png
         gethomepage.dev/name: Overseerr
+        external-dns.alpha.kubernetes.io/target: [{ env "external_dns_record_target" }]
       labels:
         access: public
       hosts:

@@ -6,6 +6,8 @@ global:
 radarr:
   global:
     fullnameOverride: pirate-ship-radarr
+    annotations:
+      app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
@@ -66,6 +68,8 @@ radarr:
 sonarr:
   global:
     fullnameOverride: pirate-ship-sonarr
+    annotations:
+      app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sonarr
@@ -125,6 +129,8 @@ sonarr:
 prowlarr:
   global:
     fullnameOverride: pirate-ship-prowlarr
+    annotations:
+      app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-prowlarr
@@ -185,6 +191,8 @@ prowlarr:
 sabnzbd:
   global:
     fullnameOverride: pirate-ship-sabnzbd
+    annotations:
+      app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sabnzbd
@@ -241,6 +249,8 @@ sabnzbd:
 overseerr:
   global:
     fullnameOverride: pirate-ship-overseerr
+    annotations:
+      app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-overseer

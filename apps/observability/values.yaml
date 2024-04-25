@@ -1,11 +1,31 @@
+credentials:
+  secretName: grafana-cloud-credentials
+  remoteSecret: grafana-cloud-credentials
+
 k8s-monitoring:
   cluster:
     name: dc-homelab
-  externalServices: [{ env "grafana_cloud_services" | nindent 4 }]
+  externalServices:
+    prometheus:
+      host: https://prometheus-prod-13-prod-us-east-0.grafana.net
+      basicAuth:
+        usernameKey: prom-username
+        passwordKey: prom-password
+      secret:
+        create: false
+        name: grafana-cloud-credentials
+    loki:
+      host: https://logs-prod-006.grafana.net
+      basicAuth:
+        usernameKey: prom-username
+        passwordKey: prom-password
+      secret:
+        create: false
+        name: grafana-cloud-credentials
   metrics:
     enabled: true
     cost:
-      enabled: true
+      enabled: false
     node-exporter:
       enabled: true
   logs:
@@ -15,22 +35,16 @@ k8s-monitoring:
     cluster_events:
       enabled: true
   traces:
-    enabled: true
+    enabled: false
   receivers:
     grpc:
-      enabled: true
+      enabled: false
     http:
-      enabled: true
+      enabled: false
     zipkin:
-      enabled: true
+      enabled: false
   opencost:
-    enabled: true
-    opencost:
-      exporter:
-        defaultClusterId: dc-homelab
-      prometheus:
-        external:
-          url: https://prometheus-prod-13-prod-us-east-0.grafana.net/api/prom
+    enabled: false
   kube-state-metrics:
     enabled: true
   prometheus-node-exporter:
@@ -39,3 +53,4 @@ k8s-monitoring:
     enabled: true
   alloy: {}
   alloy-logs: {}
+

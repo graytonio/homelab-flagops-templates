@@ -10,6 +10,9 @@ spec:
     - port: 9000
       name: traefik
       protocol: TCP
+    - port: 9100
+      name: metrics
+      protocol: TCP
 ---
 apiVersion: v1
 kind: Service
@@ -22,4 +25,7 @@ spec:
   ports:
     - port: 9000
       name: traefik
+      protocol: TCP
+    - port: 9100
+      name: metrics
       protocol: TCP

@@ -7,7 +7,7 @@ k8s-monitoring:
     name: dc-homelab
   externalServices:
     prometheus:
-      host: https://prometheus-prod-13-prod-us-east-0.grafana.net
+      hostKey: prom-host
       basicAuth:
         usernameKey: prom-username
         passwordKey: prom-password
@@ -15,7 +15,7 @@ k8s-monitoring:
         create: false
         name: grafana-cloud-credentials
     loki:
-      host: https://logs-prod-006.grafana.net
+      hostKey: loki-host
       basicAuth:
         usernameKey: loki-username
         passwordKey: loki-password

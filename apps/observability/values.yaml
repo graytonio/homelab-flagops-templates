@@ -109,3 +109,12 @@ k8s-monitoring:
       forward_to   = [prometheus.relabel.metrics_service.receiver]
     }
 
+    prometheus.scrape "truenas" {
+      job_name = "integrations/truenas"
+      targets = [
+        {"__address__" = "10.0.0.50:1908", "instance": "vault"}
+      ]
+      honor_labels = true
+      forward_to = [prometheus.relabel.metrics_service.receiver]
+    }
+

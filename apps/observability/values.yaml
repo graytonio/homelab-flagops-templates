@@ -79,3 +79,33 @@ k8s-monitoring:
       forward_to   = [prometheus.relabel.metrics_service.receiver]
     }
 
+    discovery.relabel "longhorn" {
+      targets = discovery.kubernetes.services.targets
+      rule {
+        source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_name"]
+        regex = "longhorn"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_service_label_app"]
+        regex = "longhorn-manager"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_service_port_number"]
+        regex = "9500"
+        action = "keep"
+      }
+      rule {
+          source_labels = ["__meta_kubernetes_pod_name"]
+          target_label = "instance"
+      }
+    }
+
+    prometheus.scrape "longhorn" {
+      job_name     = "integrations/longhorn"
+      targets      = discovery.relabel.longhorn.output
+      honor_labels = true
+      forward_to   = [prometheus.relabel.metrics_service.receiver]
+    }
+

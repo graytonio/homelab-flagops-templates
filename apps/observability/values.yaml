@@ -17,8 +17,8 @@ k8s-monitoring:
     loki:
       host: https://logs-prod-006.grafana.net
       basicAuth:
-        usernameKey: prom-username
-        passwordKey: prom-password
+        usernameKey: loki-username
+        passwordKey: loki-password
       secret:
         create: false
         name: grafana-cloud-credentials

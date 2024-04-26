@@ -80,7 +80,7 @@ k8s-monitoring:
     }
 
     discovery.relabel "longhorn" {
-      targets = discovery.kubernetes.pod.targets
+      targets = discovery.kubernetes.pods.targets
       rule {
         source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
         regex = "longhorn"

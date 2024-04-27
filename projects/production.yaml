@@ -34,7 +34,7 @@ spec:
         requeueAfterSeconds: 20
         revision: HEAD
         files:
-          - path: apps/**/values.yaml
+          - path: apps/**/Chart.yaml
   template:
     metadata:
       labels:
@@ -69,6 +69,8 @@ spec:
                 value: graytonw
               - name: FLAGOPS_PROP_CLUSTER
                 value: datacenter
+              - name: FLAGOPS_PROP_TYPE
+                value: '{{.type}}'
       syncPolicy:
         syncOptions:
         - CreateNamespace=true

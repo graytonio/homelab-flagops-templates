@@ -18,7 +18,7 @@ spec:
   project: default
   source:
     path: bootstrap/argo-cd
-    repoURL: [{ env "gitops_source" }]
+    repoURL: https://github.com/graytonio/homelab-flagops-templates
   syncPolicy:
     automated:
       allowEmpty: true

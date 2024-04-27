@@ -11,7 +11,7 @@ spec:
   - git:
       files:
       - path: bootstrap/cluster-resources/*.json
-      repoURL: [{ env "gitops_source" }]
+      repoURL: https://github.com/graytonio/homelab-flagops-templates
       requeueAfterSeconds: 20
       revision: ""
       template:
@@ -41,7 +41,7 @@ spec:
       project: default
       source:
         path: bootstrap/cluster-resources/{{name}}
-        repoURL: [{ env "gitops_source" }]
+        repoURL: https://github.com/graytonio/homelab-flagops-templates
       syncPolicy:
         automated:
           allowEmpty: true

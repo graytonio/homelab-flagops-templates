@@ -28,7 +28,7 @@ spec:
         image: registry.access.redhat.com/ubi8
         env:
           - name: FLAGOPS_VERSION
-            value: 0.1.22
+            value: 0.1.23
         command: [sh, -c]
         args:
           - >-

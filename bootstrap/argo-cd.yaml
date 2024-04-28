@@ -19,6 +19,11 @@ spec:
   source:
     path: bootstrap/argo-cd
     repoURL: https://github.com/graytonio/homelab-flagops-templates
+    plugin:
+      name: flagops-plugin-kustomize
+      env:
+        - name: FLAGOPS_ENVIRONMENT
+          value: production
   syncPolicy:
     automated:
       allowEmpty: true

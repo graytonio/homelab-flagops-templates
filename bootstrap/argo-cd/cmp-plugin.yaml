@@ -82,7 +82,7 @@ data:
     envs:
       production:
         provider: flagsmith
-        apiKey: NCfN9iXroqPpkMLkwV7rkU
+        apiKey: M5SoJJJs5UGfxEUJxUsVAi
       staging:
         provider: flagsmith
-        apiKey: M5SoJJJs5UGfxEUJxUsVAi
+        apiKey: NCfN9iXroqPpkMLkwV7rkU

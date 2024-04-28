@@ -1,0 +1,9 @@
+apiVersion: v2
+name: reloader
+description: Reloads applications when config maps change
+type: application
+version: 0.1.0
+dependencies:
+  - name: reloader
+    repository: https://stakater.github.io/stakater-charts
+    version: 1.0.80

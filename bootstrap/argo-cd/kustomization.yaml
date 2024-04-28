@@ -6,6 +6,7 @@ images:
 
 patches:
 - path: argocd-repo-server.yaml
+- path: argocd-application-controller.yaml
 
 configMapGenerator:
 - behavior: merge

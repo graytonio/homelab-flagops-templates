@@ -10,4 +10,4 @@ spec:
           args:
             - /usr/local/bin/argocd-application-controller
             - --app-hard-resync
-            - "30"
+            - "1"

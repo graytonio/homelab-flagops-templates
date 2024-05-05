@@ -111,7 +111,7 @@ k8s-monitoring:
       }
       rule {
         source_labels = ["__meta_kubernetes_pod_container_port_number"]
-        regex = "9797"
+        regex = "7979"
         action = "keep"
       }
       rule {

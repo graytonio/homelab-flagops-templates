@@ -77,6 +77,8 @@ adguard:
         - path: /opt/adguardhome/work
 
 private:
+  podLabels:
+    app.kubernetes.io/app: external-dns
   crd:
     create: true
   rbac:
@@ -130,6 +132,8 @@ private:
     records: [{- env "custom_internal_dns_records" | nindent 6 }]
 
 public:
+  podLabels:
+    app.kubernetes.io/app: external-dns
   enabled: [{ env "external_dns_public_records_enabled" }]
   crd:
     create: true

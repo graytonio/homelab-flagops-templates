@@ -102,6 +102,24 @@ k8s-monitoring:
       }
     }
 
+    discovery.relabel "external-dns" {
+      targets = discovery.kubernetes.pods.targets
+      rule {
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
+        regex = "external-dns"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_container_port_number"]
+        regex = "9797"
+        action = "keep"
+      }
+      rule {
+        source_labels = ["__meta_kubernetes_pod_name"]
+        target_label = "instance"
+      }
+    }
+
     prometheus.scrape "longhorn" {
       job_name     = "integrations/longhorn"
       targets      = discovery.relabel.longhorn.output
@@ -117,5 +135,12 @@ k8s-monitoring:
       ]
       honor_labels = true
       forward_to = [prometheus.relabel.metrics_service.receiver]
+    }
+
+    prometheus.scrape "external-dns" {
+      job_name = "integrations/external-dns"
+      targets = discovery.relable.external-dns.output
+      honor_labels = true
+      forward_to   = [prometheus.relabel.metrics_service.receiver]
     }
 

@@ -102,7 +102,7 @@ k8s-monitoring:
       }
     }
 
-    discovery.relabel "external-dns" {
+    discovery.relabel "externaldns" {
       targets = discovery.kubernetes.pods.targets
       rule {
         source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
@@ -139,7 +139,7 @@ k8s-monitoring:
 
     prometheus.scrape "external-dns" {
       job_name = "integrations/external-dns"
-      targets = discovery.relable.external-dns.output
+      targets = discovery.relable.externaldns.output
       honor_labels = true
       forward_to   = [prometheus.relabel.metrics_service.receiver]
     }

@@ -115,7 +115,7 @@ k8s-monitoring:
         action = "keep"
       }
       rule {
-        source_labels = ["__meta_kubernetes_pod_name"]
+        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
         target_label = "instance"
       }
     }

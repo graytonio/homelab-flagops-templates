@@ -137,7 +137,7 @@ k8s-monitoring:
       forward_to = [prometheus.relabel.metrics_service.receiver]
     }
 
-    prometheus.scrape "external-dns" {
+    prometheus.scrape "externaldns" {
       job_name = "integrations/external-dns"
       targets = discovery.relable.externaldns.output
       honor_labels = true

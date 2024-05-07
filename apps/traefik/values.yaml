@@ -42,7 +42,7 @@ privateingress:
         enabled: true
     file:
       enabled: true
-      content:
+      content: |
         http:
           services:
 [{- if env "homeassistant_reverse_proxy_enabled" }]

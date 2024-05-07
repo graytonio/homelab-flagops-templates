@@ -40,6 +40,26 @@ privateingress:
       labelSelector: "access=private"
       publishedService:
         enabled: true
+    file:
+      enabled: true
+      content:
+        http:
+          services:
+[{- if env "homeassistant_reverse_proxy_enabled" }]
+            home:
+              loadBalancer:
+                servers:
+                  - url: [{ env "homeassistant_reverse_proxy" }]
+[{- end }]
+          routers:
+[{- if env "homeassistant_reverse_proxy_enabled" }]
+            home:
+              entryPoints:
+                - websecure
+              service: home
+              rule: Host(`home.[{ env "env_domain" }]`) && PathPrefix(`/`)
+[{- end }]
+
         
 publicingress:
   host: traefik.public.[{ env "env_domain" }]

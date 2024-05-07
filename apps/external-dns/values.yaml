@@ -129,6 +129,7 @@ private:
     enabled: [{ env "custom_internal_dns_records_enabled" }]
     domain: [{ env "env_domain" }]
     target: [{ env "private_ingress_lbip" }]
+    type: "A"
     records: [{- env "custom_internal_dns_records" | nindent 6 }]
 
 public:
@@ -155,5 +156,6 @@ public:
   customEndpoints:
     enabled: [{ env "custom_external_dns_records_enabled" }]
     domain: [{ env "env_domain" }]
-    target: [{ env "external_dns_record_target" }]
+    target: [{ env "external_dns_record_target.target" }]
+    type: [{ env "external_dns_record_target.type" }]
     records: [{- env "custom_external_dns_records" | nindent 6 }]

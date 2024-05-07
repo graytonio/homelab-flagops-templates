@@ -135,7 +135,6 @@ private:
 public:
   podLabels:
     app.kubernetes.io/app: external-dns
-  enabled: [{ env "external_dns_public_records_enabled" }]
   crd:
     create: true
   rbac:

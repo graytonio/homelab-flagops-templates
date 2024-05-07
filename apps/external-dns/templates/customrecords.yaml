@@ -11,7 +11,7 @@ spec:
   endpoints:
   - dnsName: {{ . }}.{{ $.Values.public.customEndpoints.domain }}
     recordTTL: 1
-    recordType: CNAME
+    recordType: A
     targets:
     - {{ $.Values.public.customEndpoints.target }}
 {{- end }}
@@ -29,7 +29,7 @@ spec:
   endpoints:
   - dnsName: {{ . }}.{{ $.Values.private.customEndpoints.domain }}
     recordTTL: 1
-    recordType: CNAME
+    recordType: A
     targets:
     - {{ $.Values.private.customEndpoints.target }}
 {{- end }}

@@ -1,0 +1,5 @@
+apiVersion: v2
+name: homeassistant
+description: Manages resources for connecting to home assistant
+type: application
+version: 0.1.0

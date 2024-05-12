@@ -3,8 +3,6 @@ apiVersion: externaldns.k8s.io/v1alpha1
 kind: DNSEndpoint
 metadata:
   name: homeassistant-public-dns
-  annotations:
-    external-dns.alpha.kubernetes.io/cloudflare-proxied: "false"
   labels:
     access: public
 spec:
@@ -12,6 +10,9 @@ spec:
     - dnsName: home.{{ .Values.base_domain }}
       recordTTL: 1
       recordType: CNAME
+      providerSpecific:
+        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
+          value: "false"
       targets:
         - {{ .Values.public_access.cname }}
 {{- end }}

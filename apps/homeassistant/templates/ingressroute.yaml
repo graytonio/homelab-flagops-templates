@@ -24,6 +24,8 @@ apiVersion: traefik.io/v1alpha1
 kind: IngressRoute
 metadata:
   name: homeassistant-ingress
+  labels:
+    access: public
 spec:
   entryPoints:
     - websecure

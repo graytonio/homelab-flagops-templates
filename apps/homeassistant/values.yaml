@@ -3,4 +3,3 @@ internal_lb: [{ env "private_ingress_lbip" }]
 public_access:
   enabled: [{ env "homeassistant_public_endpoint_enabled" }]
   cname: [{ env "homeassistant_public_endpoint" }]
-  acme: [{ env "homeassistant_acme_challenge" }]

@@ -21,20 +21,29 @@ spec:
 ---
 {{ if .Values.private_access.enabled }}
 apiVersion: traefik.io/v1alpha1
-kind: IngressRoute
+kind: Ingress
 metadata:
   name: homeassistant-private-ingress
   labels:
+    name: homeassistant-private-access
     access: private
 spec:
-  entryPoints:
-    - websecure
-  routes:
-    - match: Host(`home.{{ .Values.base_domain }}`) && PathPrefix(`/`)
-      kind: Rule
-      services:
-      - name: homeassistant-external-service
-        port: 80
+  ingressClassName: private-traffic
+  tls:
+    - hosts:
+      - home.{{ .Values.base_domain }}
+      secretName: tls-homeassistant-private-dns
+  rules:
+    - host: home.{{ .values.base_domain }}
+      http:
+        paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: homeassistant-external-service
+              port:
+                name: http
 {{ end }}
 
 {{ if .Values.public_access.enabled }}

@@ -2,7 +2,7 @@
 apiVersion: v1
 kind: Endpoints
 metadata:
-  name: homeassistant-external-service-endpoint
+  name: homeassistant-external-service
 subsets:
   - addresses:
     - ip: {{ .Values.private_access.endpoint }}
@@ -19,8 +19,6 @@ spec:
   - name: http
     port: 80
     targetPort: 8123
-  endpoints:
-  - homeassistant-external-service-endpoint
 ---
 apiVersion: traefik.io/v1alpha1
 kind: IngressRoute

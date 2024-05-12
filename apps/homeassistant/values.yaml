@@ -1,5 +1,9 @@
 base_domain: [{ env "env_domain" }]
-internal_lb: [{ env "private_ingress_lbip" }]
+
+private_access:
+  enabled: [{ or (env "homeassistant_private_endpoint_enabled") (env "homeassistant_public_endpoint_enabled") }]
+  endpoint: [{ env "homeassistant_private_endpoint" }]
+  proxy: [{ env "private_ingress_lbip" }]
 public_access:
   enabled: [{ env "homeassistant_public_endpoint_enabled" }]
   cname: [{ env "homeassistant_public_endpoint" }]

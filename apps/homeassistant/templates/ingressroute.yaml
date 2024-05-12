@@ -1,0 +1,38 @@
+{{ if .Values.private_access.enabled }}
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: homeassistant-external-service-endpoint
+subsets:
+  - addresses:
+    - ip: {{ .Values.private_access.endpoint }}
+    ports:
+    - port: 8123
+      name: http
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: homeassistant-external-service
+spec:
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8123
+  endpoints:
+  - homeassistant-external-service-endpoint
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: homeassistant-ingress
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`home.{{ .Values.base_domain }}`) && PathPrefix(`/`)
+      kind: Rule
+      services:
+      - name: homeassistant-external-service
+        port: 80
+{{ end }}

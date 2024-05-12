@@ -26,4 +26,4 @@ spec:
       recordTTL: 1
       recordType: A
       targets:
-        - {{ .Values.internal_lb }}
+        - {{ .Values.private_access.proxy }}

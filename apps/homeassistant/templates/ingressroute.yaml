@@ -58,6 +58,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    external-dns.alpha.kubernetes.io/target: {{ .Values.public_access.cname }}
   labels:
     name: homeassistant-public-access
     access: public

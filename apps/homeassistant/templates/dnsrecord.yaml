@@ -15,23 +15,6 @@ spec:
           value: "false"
       targets:
         - {{ .Values.public_access.cname }}
----
-apiVersion: externaldns.k8s.io/v1alpha1
-kind: DNSEndpoint
-metadata:
-  name: homeassistant-public-dns-acme
-  labels:
-    access: public
-spec:
-  endpoints:
-    - dnsName: _acme-challenge.home.{{ .Values.base_domain }}
-      recordTTL: 1
-      recordType: CNAME
-      providerSpecific:
-        - name: external-dns.alpha.kubernetes.io/cloudflare-proxied
-          value: "false"
-      targets:
-        - {{ .Values.public_access.acme }}
 {{- end }}
 ---
 apiVersion: externaldns.k8s.io/v1alpha1

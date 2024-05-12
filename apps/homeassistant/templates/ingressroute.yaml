@@ -34,7 +34,7 @@ spec:
       - home.{{ .Values.base_domain }}
       secretName: tls-homeassistant-private-dns
   rules:
-    - host: home.{{ .values.base_domain }}
+    - host: home.{{ .Values.base_domain }}
       http:
         paths:
         - path: /

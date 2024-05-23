@@ -8,13 +8,13 @@ patches:
 - path: argocd-repo-server.yaml
 - path: argocd-application-controller.yaml
 - target:
-      group: rbac.authorization.k8s.io
-      version: v1
-      kind: ClusterRoleBinding
-    patch: |-
-      - op: replace
-        path: /subjects/0/namespace
-        value: default
+    group: rbac.authorization.k8s.io
+    version: v1
+    kind: ClusterRoleBinding
+  patch: |-
+    - op: replace
+      path: /subjects/0/namespace
+      value: default
 
 configMapGenerator:
 - name: argocd-cm

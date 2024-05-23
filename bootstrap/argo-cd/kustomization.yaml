@@ -7,8 +7,20 @@ images:
 patches:
 - path: argocd-repo-server.yaml
 - path: argocd-application-controller.yaml
+- target:
+      group: rbac.authorization.k8s.io
+      version: v1
+      kind: ClusterRoleBinding
+    patch: |-
+      - op: replace
+        path: /subjects/0/namespace
+        value: default
 
 configMapGenerator:
+- name: argocd-cm
+  behavior: merge
+  literals:
+    - "timeout.reconciliation=15s"
 - behavior: merge
   literals:
   - kustomize.buildOptions="--enable-alpha-plugins --enable-helm"
@@ -28,6 +40,6 @@ configMapGenerator:
 kind: Kustomization
 namespace: argocd
 resources:
-- github.com/argoproj-labs/argocd-autopilot/manifests/ha?ref=v0.4.17
+- https://raw.githubusercontent.com/argoproj/argo-cd/v2.11.0/manifests/ha/install.yaml
 - cmp-plugin.yaml
 - ingress.yaml

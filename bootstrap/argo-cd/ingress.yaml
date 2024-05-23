@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: argocd-ui
   annotations:
-    external-dns.alpha.kubernetes.io/hostname: argocd.[{ env "env_domain" }]
+    external-dns.alpha.kubernetes.io/hostname: argocd.graytonward.com
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
     gethomepage.dev/enabled: "true"
@@ -19,10 +19,10 @@ spec:
   ingressClassName: private-traffic
   tls:
     - hosts:
-      - argocd.[{ env "env_domain" }]
+      - argocd.graytonward.com
       secretName: tls-argocd-ingress-dns
   rules:
-  - host: argocd.[{ env "env_domain" }]
+  - host: argocd.graytonward.com
     http:
       paths:
       - pathType: Prefix

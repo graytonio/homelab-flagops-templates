@@ -42,11 +42,6 @@ spec:
       source:
         path: bootstrap/cluster-resources/{{name}}
         repoURL: https://github.com/graytonio/homelab-flagops-templates
-        plugin:
-          name: flagops-plugin
-          env:
-            - name: FLAGOPS_ENVIRONMENT
-              value: production
       syncPolicy:
         automated:
           allowEmpty: true

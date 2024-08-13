@@ -130,7 +130,7 @@ k8s-monitoring:
     prometheus.scrape "discord-bot" {
       job_name = "integrations/discord-bot"
       targets = discovery.relabel.discord-bot.output
-      honor_labels: true
+      honor_labels = true
       forward_to   = [prometheus.relabel.metrics_service.receiver]
     }
 

@@ -1,7 +1,7 @@
 discord-bot:
-  global:
+  defaultPodOptions:
     labels:
-      app.kubernetes.io/name: discord-bot
+      app.kubernetes.io/app: discord-bot
   controllers:
     main:
       enabled: true

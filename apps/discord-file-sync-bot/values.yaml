@@ -6,7 +6,7 @@ discord-bot:
       containers:
         main:
           image: 
-            repository: ghcr.io/graytonio/discord-file-sync-bot
+            repository: ghcr.io/graytonio/discord-file-sync
             tag: latest
             pullPolicy: Always
           env:

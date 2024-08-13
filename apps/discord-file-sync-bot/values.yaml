@@ -1,4 +1,7 @@
 discord-bot:
+  defaultPodOptions:
+    annotations:
+      app.kubernetes.io/name: discord-bot
   controllers:
     main:
       enabled: true

@@ -5,20 +5,21 @@ discord-bot:
       replicas: 1
       containers:
         main:
-          image: ghcr.io/graytonio/discord-file-sync-bot
-          tag: latest
-          pullPolicy: Always
-      env:
-        DISCORD_BOT_TOKEN:
-          valueFrom:
-            secretKeyRef:
-              name: discord-file-sync-bot-creds
-              key: DISCORD_BOT_TOKEN
-        MYSQL_DB_DSN:
-          valueFrom:
-            secretKeyRef:
-              name: discord-file-sync-bot-creds
-              key: MYSQL_DB_DSN
+          image: 
+            repository: ghcr.io/graytonio/discord-file-sync-bot
+            tag: latest
+            pullPolicy: Always
+          env:
+            DISCORD_BOT_TOKEN:
+              valueFrom:
+                secretKeyRef:
+                  name: discord-file-sync-bot-creds
+                  key: DISCORD_BOT_TOKEN
+            MYSQL_DB_DSN:
+              valueFrom:
+                secretKeyRef:
+                  name: discord-file-sync-bot-creds
+                  key: MYSQL_DB_DSN
   service:
     main:
       controller: main

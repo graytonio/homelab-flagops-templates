@@ -1,6 +1,6 @@
 discord-bot:
   defaultPodOptions:
-    annotations:
+    labels:
       app.kubernetes.io/name: discord-bot
   controllers:
     main:

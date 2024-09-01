@@ -88,9 +88,7 @@ private:
   labelFilter: access==private
   sources:
     - ingress
-[{- if env "custom_internal_dns_records_enabled" }]
     - crd
-[{- end }]
   extraArgs:
     webhook-provider-url: http://localhost:8888
   sidecars:
@@ -125,13 +123,6 @@ private:
       - name: DRY_RUN
         value: "false"
 
-  customEndpoints: 
-    enabled: [{ env "custom_internal_dns_records_enabled" }]
-    domain: [{ env "env_domain" }]
-    target: [{ env "private_ingress_lbip" }]
-    type: "A"
-    records: [{- env "custom_internal_dns_records" | nindent 6 }]
-
 public:
   podLabels:
     app.kubernetes.io/app: external-dns
@@ -149,12 +140,4 @@ public:
   labelFilter: access==public
   sources:
     - ingress
-[{- if env "custom_external_dns_records_enabled" }]
     - crd
-[{- end }]
-  customEndpoints:
-    enabled: [{ env "custom_external_dns_records_enabled" }]
-    domain: [{ env "env_domain" }]
-    target: [{ env "external_dns_record_target.target" }]
-    type: [{ env "external_dns_record_target.type" }]
-    records: [{- env "custom_external_dns_records" | nindent 6 }]

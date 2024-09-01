@@ -24,7 +24,35 @@ homepage:
   config:
     bookmarks:
     services:
-    [{- env "homepage_custom_services" | nindent 6 }]
+    - Streaming:
+      - Twitch:
+          href: https://dashboard.twitch.tv/u/graytonio/home
+          icon: twitch
+      - YouTube:
+          href: https://studio.youtube.com/channel/UCYVRYd86F-3zLtyIIyyfrWQ
+          icon: youtube
+    - Operations:
+      - GitOps:
+          href: https://github.com/graytonio/homelab-flagops-templates/tree/main
+          description: GitOps Templates
+          icon: github
+      - Grafana:
+          href: https://graytonward.grafana.net/
+          description: See metrics and alerts
+          icon: grafana
+      - Flagsmith:
+          href: https://app.flagsmith.com/
+          description: Change Homelab Configurations
+          icon: https://miro.medium.com/v2/resize:fit:2400/1*fuSgB1AynocvAE7iBgHdOA.png
+    - Home:
+      - HomeAssistant:
+          href: https://home.graytonward.com
+          description: Home Dashboard
+          icon: home-assistant-alt
+      - Unifi:
+          href: https://unifi.ui.com/
+          description: Unifi Cloud Management Portal
+          icon: unifi
     widgets:
       - kubernetes:
           cluster:

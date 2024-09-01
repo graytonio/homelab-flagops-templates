@@ -34,10 +34,10 @@ spec:
   ingressClassName: private-traffic
   tls:
     - hosts:
-      - home.{{ .Values.base_domain }}
+      - vault.{{ .Values.base_domain }}
       secretName: tls-{{ .Release.Name }}-dns
   rules:
-    - host: home.{{ .Values.base_domain }}
+    - host: vault.{{ .Values.base_domain }}
       http:
         paths:
         - path: /

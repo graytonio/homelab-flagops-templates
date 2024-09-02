@@ -4,5 +4,5 @@ private_access:
   enabled: [{ env "external_service_private_endpoint_enabled" }]
   endpoint: [{ env "external_service_private_endpoint" }]
 public_access:
-  enabled: [{ env "external_service_public_endpoint" }]
+  enabled: [{ env "external_service_public_endpoint_enabled" }]
   cname: [{ env "external_service_public_endpoint" }]

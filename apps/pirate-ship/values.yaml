@@ -338,7 +338,7 @@ overseerr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: overseerr.png
         gethomepage.dev/name: Overseerr
-        external-dns.alpha.kubernetes.io/target: [{ env "external_dns_record_target.target" }]
+        external-dns.alpha.kubernetes.io/target: [{ env "external_service_public_endpoint" }]
       labels:
         access: public
       tls:

@@ -3,3 +3,7 @@ name: homeassistant
 description: Manages resources for connecting to home assistant
 type: application
 version: 0.1.0
+dependencies:
+  - name: external-service
+    repository: https://charts.graytonward.com
+    version: 1.0.1

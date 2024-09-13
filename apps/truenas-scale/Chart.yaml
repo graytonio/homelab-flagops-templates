@@ -7,4 +7,3 @@ dependencies:
   - name: external-service
     repository: https://charts.graytonward.com
     version: 1.0.1
-    alias: service

@@ -1,22 +1,23 @@
-ipAddress: [{ env "external_service_private_endpoint "}]
-port:
-  service: 8123
-  target: 80
-  name: http
+external-service:
+  ipAddress: [{ env "external_service_private_endpoint "}]
+  port:
+    service: 8123
+    target: 80
+    name: http
 
-service:
-  enabled: true
+  service:
+    enabled: true
 
-ingress:
-  enabled: true
-  ingressClassName: private-traffic
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    traefik.ingress.kubernetes.io/router.entrypoints: websecure
-  labels:
-    access: private
-  tls:
-    - hosts:
-        - home.[{ env "base_domain" }]
-      secretName: tls-homeassistant-dns
-  host: home.[{ env "base_domain" }]
+  ingress:
+    enabled: true
+    ingressClassName: private-traffic
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    labels:
+      access: private
+    tls:
+      - hosts:
+          - home.[{ env "base_domain" }]
+        secretName: tls-homeassistant-dns
+    host: home.[{ env "base_domain" }]

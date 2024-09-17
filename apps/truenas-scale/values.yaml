@@ -1,5 +1,5 @@
 externalservice:
-  ipAddress: [{ env "external_service_private_endpoint "}]
+  ipAddress: [{ env "external_service_private_endpoint"}]
   port:
     service: 8123
     target: 80

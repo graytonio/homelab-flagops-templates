@@ -18,6 +18,6 @@ externalservice:
       access: private
     tls:
       - hosts:
-          - home.[{ env "base_domain" }]
+          - home.[{ env "env_domain" }]
         secretName: tls-homeassistant-dns
-    host: home.[{ env "base_domain" }]
+    host: home.[{ env "env_domain" }]

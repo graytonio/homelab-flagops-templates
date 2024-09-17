@@ -1,4 +1,4 @@
-external-service:
+externalservice:
   ipAddress: [{ env "external_service_private_endpoint "}]
   port:
     service: 8123

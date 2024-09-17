@@ -1,0 +1,17 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: gotify-postgresql
+spec:
+  teamId: "gotify"
+  volume:
+    size: 10Gi
+  numberOfInstances: 3
+  users:
+    gotify:  # database owner
+    - superuser
+    - createdb
+  databases:
+    gotify: gotify
+  postgresql:
+    version: "14"

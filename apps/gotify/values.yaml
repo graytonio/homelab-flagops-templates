@@ -13,7 +13,7 @@ gotify:
           env:
             TZ: America/New_York
             GOTIFY_DATABASE_DIALECT: postgres
-            GOTIFY_DATABASE_CONNECTION: host=gotify-postgres.gotify.svc.cluster.local port=5432 user=gotify password=gotify dbname=gotify # TODO Move to secret with secure password
+            GOTIFY_DATABASE_CONNECTION: host=gotify-postgresql.gotify.svc.cluster.local port=5432 user=gotify password=gotify dbname=gotify # TODO Move to secret with secure password
   service:
     main:
       controller: main

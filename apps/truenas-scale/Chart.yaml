@@ -1,6 +1,6 @@
 apiVersion: v2
-name: homeassistant
-description: Manages resources for connecting to home assistant
+name: truenas-scale
+description: Manages resources for connecting to TrueNAS Scale
 type: application
 version: 0.1.0
 dependencies:

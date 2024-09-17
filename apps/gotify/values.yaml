@@ -39,7 +39,7 @@ gotify:
       tls:
       - hosts:
         - alerts.[{ env "env_domain" }]
-        secretname: tls-gotify-ingress-dns
+        secretName: tls-gotify-ingress-dns
       hosts:
         - host: alerts.[{ env "env_domain" }]
           paths:

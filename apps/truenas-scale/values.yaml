@@ -18,6 +18,6 @@ externalservice:
       access: private
     tls:
       - hosts:
-          - home.[{ env "env_domain" }]
-        secretName: tls-homeassistant-dns
-    host: home.[{ env "env_domain" }]
+          - vault.[{ env "env_domain" }]
+        secretName: tls-truenasscale-dns
+    host: vault.[{ env "env_domain" }]

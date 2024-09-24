@@ -113,7 +113,7 @@ k8s-monitoring:
       targets = discovery.kubernetes.pods.targets
       rule {
         source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
-        regex = "discordbot"
+        regex = "discord-bot"
         action = "keep"
       }
       rule {

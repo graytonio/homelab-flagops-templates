@@ -12,6 +12,10 @@ discord-bot:
             repository: ghcr.io/graytonio/discord-file-sync
             tag: latest
             pullPolicy: Always
+          ports:
+            - name: metrics
+              containerPort: 2112
+              protocol: TCP
           env:
             DISCORD_BOT_TOKEN:
               valueFrom:

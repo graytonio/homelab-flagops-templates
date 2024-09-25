@@ -8,7 +8,7 @@ discord-bot:
       replicas: 1
       pod:
         annotations:
-          k8s.grafana.com/scrape: true
+          k8s.grafana.com/scrape: "true"
           k8s.grafana.com/job: discordbot
           k8s.grafana.com/metrics.portName: metrics
       containers:

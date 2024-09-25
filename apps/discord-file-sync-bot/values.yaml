@@ -6,10 +6,11 @@ discord-bot:
     main:
       enabled: true
       replicas: 1
-      annotations:
-        k8s.grafana.com/scrape: true
-        k8s.grafana.com/job: discordbot
-        k8s.grafana.com/metrics.portName: metrics
+      pod:
+        annotations:
+          k8s.grafana.com/scrape: true
+          k8s.grafana.com/job: discordbot
+          k8s.grafana.com/metrics.portName: metrics
       containers:
         main:
           image: 

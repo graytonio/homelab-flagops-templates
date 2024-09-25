@@ -9,7 +9,8 @@ discord-bot:
       pod:
         annotations:
           k8s.grafana.com/scrape: "true"
-          k8s.grafana.com/job: discordbot
+          k8s.grafana.com/job: discord-bot
+          k8s.grafana.com/instance: discord-bot-production
           k8s.grafana.com/metrics.portName: metrics
       containers:
         main:

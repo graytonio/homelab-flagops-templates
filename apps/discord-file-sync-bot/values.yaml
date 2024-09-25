@@ -6,16 +6,16 @@ discord-bot:
     main:
       enabled: true
       replicas: 1
+      annotations:
+        k8s.grafana.com/scrape: true
+        k8s.grafana.com/job: discordbot
+        k8s.grafana.com/metrics.portName: metrics
       containers:
         main:
           image: 
             repository: ghcr.io/graytonio/discord-file-sync
             tag: latest
             pullPolicy: Always
-          annotations:
-            k8s.grafana.com/scrape: true
-            k8s.grafana.com/job: discordbot
-            k8s.grafana.com/metrics.portName: metrics
           ports:
             - name: metrics
               containerPort: 2112

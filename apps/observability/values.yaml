@@ -109,31 +109,6 @@ k8s-monitoring:
       forward_to   = [prometheus.relabel.metrics_service.receiver]
     }
 
-    discovery.relabel "discordbot" {
-      targets = discovery.kubernetes.pods.targets
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
-        regex = "discord-bot"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_container_port_number"]
-        regex = "2112"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
-        target_label = "instance"
-      }
-    }
-
-    prometheus.scrape "discordbot" {
-      job_name = "integrations/discordbot"
-      targets = discovery.relabel.discordbot.output
-      honor_labels = true
-      forward_to   = [prometheus.relabel.metrics_service.receiver]
-    }
-
     discovery.relabel "externaldns" {
       targets = discovery.kubernetes.pods.targets
       rule {

@@ -22,7 +22,7 @@ radarr:
         main:
           image:
             repository: linuxserver/radarr
-            tag: 5.4.6
+            tag: 5.15.1
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022
@@ -103,7 +103,7 @@ sonarr:
         main:
           image:
             repository: linuxserver/sonarr
-            tag: 4.0.4
+            tag: 4.0.11
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022
@@ -181,7 +181,7 @@ prowlarr:
         main:
           image:
             repository: linuxserver/prowlarr
-            tag: 1.15.0
+            tag: 1.27.0
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022
@@ -321,7 +321,7 @@ overseerr:
         main:
           image:
             repository: linuxserver/overseerr
-            tag: v1.33.2-ls102
+            tag: v1.33.2
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York

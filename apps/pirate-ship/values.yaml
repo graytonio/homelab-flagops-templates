@@ -321,7 +321,7 @@ overseerr:
         main:
           image:
             repository: linuxserver/overseerr
-            tag: v1.33.2
+            tag: 1.33.2
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York

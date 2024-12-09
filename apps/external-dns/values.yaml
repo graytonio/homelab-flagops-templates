@@ -72,7 +72,7 @@ adguard:
       enabled: true
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
-      size: 1Gi
+      size: 10Gi
       globalMounts:
         - path: /opt/adguardhome/work
 

@@ -15,7 +15,7 @@ privateingress:
   host: traefik.private.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
-    annotations:
+    podAnnotations:
       app.kubernetes.io/instance: private-ingress
     labels:
       app.kubernetes.io/instance: private-ingress
@@ -51,7 +51,7 @@ publicingress:
   host: traefik.public.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
-    annotations:
+    podAnnotations:
       app.kubernetes.io/instance: public-ingress
     labels:
       app.kubernetes.io/instance: public-ingress

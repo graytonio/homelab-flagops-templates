@@ -10,7 +10,7 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik Public
-    gethomepage.dev/pod-selector: "app.kubernetes.io/instance: public-ingress"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name: publicingress"
   labels:
     name: traefik-dashboard-private
     access: private
@@ -44,7 +44,7 @@ metadata:
     gethomepage.dev/group: Infrastructure
     gethomepage.dev/icon: traefik.png
     gethomepage.dev/name: Traefik Private
-    gethomepage.dev/pod-selector: "app.kubernetes.io/instance: private-ingress"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name: privateingress"
   labels:
     name: traefik-dashboard-private
     access: private

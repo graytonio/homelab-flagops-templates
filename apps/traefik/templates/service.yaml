@@ -7,7 +7,7 @@ spec:
   selector:
     app.kubernetes.io/name: publicingress
   ports:
-    - port: 9000
+    - port: 8080
       name: traefik
       protocol: TCP
     - port: 9100
@@ -23,7 +23,7 @@ spec:
   selector:
     app.kubernetes.io/name: privateingress
   ports:
-    - port: 9000
+    - port: 8080
       name: traefik
       protocol: TCP
     - port: 9100

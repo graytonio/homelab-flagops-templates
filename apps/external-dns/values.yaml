@@ -10,7 +10,7 @@ adguard:
           nameOverride: adguard
           image:
             repository: adguard/adguardhome
-            tag: v0.107.55
+            tag: v0.107.54
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York
@@ -64,14 +64,14 @@ adguard:
     config:
       enabled: true
       type: persistentVolumeClaim
-      accessMode: ReadWriteMany
+      accessMode: ReadWriteOnce
       size: 1Gi
       globalMounts:
         - path: /opt/adguardhome/conf
     data:
       enabled: true
       type: persistentVolumeClaim
-      accessMode: ReadWriteMany
+      accessMode: ReadWriteOnce
       size: 10Gi
       globalMounts:
         - path: /opt/adguardhome/work

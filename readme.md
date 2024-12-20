@@ -51,4 +51,4 @@ These are the forward facing applications that provide services to users
 
 In order to take this repository and go to a fully functioning deployment you need to have the following setup before hand.
 
-TODO
+TODO Add bootstrapping steps

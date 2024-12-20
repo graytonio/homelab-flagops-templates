@@ -40,6 +40,7 @@ radarr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: radarr.png
         gethomepage.dev/name: Radarr
+        gethomepage.dev/pod-selector: "app.kubernetes.io/name=radarr"
       labels:
         access: private
       tls:
@@ -121,6 +122,7 @@ sonarr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: sonarr.png
         gethomepage.dev/name: Sonarr
+        gethomepage.dev/pod-selector: "app.kubernetes.io/name=sonarr"
       labels:
         access: private
       tls:
@@ -200,6 +202,7 @@ prowlarr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: prowlarr.png
         gethomepage.dev/name: Prowlarr
+        gethomepage.dev/pod-selector: "app.kubernetes.io/name=prowlarr"
       labels:
         access: private
       tls:
@@ -268,6 +271,7 @@ sabnzbd:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: sabnzbd.png
         gethomepage.dev/name: Sabnzbd
+        gethomepage.dev/pod-selector: "app.kubernetes.io/name=sabnzbd"
       labels:
         access: private
       tls:
@@ -338,6 +342,7 @@ overseerr:
         gethomepage.dev/group: Pirate Ship
         gethomepage.dev/icon: overseerr.png
         gethomepage.dev/name: Overseerr
+        gethomepage.dev/pod-selector: "app.kubernetes.io/name=overseerr"
         external-dns.alpha.kubernetes.io/target: [{ env "external_service_public_endpoint" }]
       labels:
         access: public

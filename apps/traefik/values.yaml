@@ -1,4 +1,3 @@
-# TODO Custom proxy features
 acme:
   enabled: [{ env "acme_certs_enabled" }]
   production: [{ env "acme_certs_production_enabled" }]

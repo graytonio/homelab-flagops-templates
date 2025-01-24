@@ -1,6 +1,5 @@
 discord-bot:
   defaultPodOptions:
-    hostUsers: true
     labels:
       app.kubernetes.io/app: discord-bot
   controllers:

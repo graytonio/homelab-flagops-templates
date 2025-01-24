@@ -1,2 +1,3 @@
-configGeneral:
-  enable_crd_registration: true
+postgres-operator:
+  configGeneral:
+    enable_crd_registration: true

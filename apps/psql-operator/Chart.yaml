@@ -1,6 +1,6 @@
 apiVersion: v2
-name: psql-operator
-description: Manages postgresql servers in kubernetes
+name: db-operator
+description: Manages database operators
 type: application
 version: 0.1.0
 dependencies:

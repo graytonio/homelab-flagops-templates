@@ -5,22 +5,22 @@ type: application
 version: 0.1.0
 dependencies:
   - name: app-template
-    version: 3.6.1
+    version: 3.5.1
     repository: https://bjw-s.github.io/helm-charts/
     alias: radarr
   - name: app-template
-    version: 3.6.1
+    version: 3.5.1
     repository: https://bjw-s.github.io/helm-charts/
     alias: sonarr
   - name: app-template
-    version: 3.6.1
+    version: 3.5.1
     repository: https://bjw-s.github.io/helm-charts/
     alias: prowlarr
   - name: app-template
-    version: 3.6.1
+    version: 3.5.1
     repository: https://bjw-s.github.io/helm-charts/
     alias: sabnzbd
   - name: app-template
-    version: 3.6.1
+    version: 3.5.1
     repository: https://bjw-s.github.io/helm-charts/
     alias: overseerr

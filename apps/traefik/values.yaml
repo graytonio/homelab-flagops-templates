@@ -71,8 +71,9 @@ publicingress:
       enabled: false
   ports:
     web:
-      redirectTo:
-        port: websecure
+      redirections:
+        entryPoint:
+          to: websecure
   providers:
     kubernetesCRD:
       labelSelector: "access=public"

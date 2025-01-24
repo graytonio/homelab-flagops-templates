@@ -6,11 +6,11 @@ version: 0.1.0
 dependencies:
   - name: traefik
     repository: https://traefik.github.io/charts
-    version: 33.2.1
+    version: 34.1.0
     alias: publicingress
   - name: traefik
     repository: https://traefik.github.io/charts
-    version: 33.2.1
+    version: 34.1.0
     alias: privateingress
   - name: cert-manager
     repository: https://charts.jetstack.io

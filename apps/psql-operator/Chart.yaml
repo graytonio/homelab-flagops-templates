@@ -1,9 +1,0 @@
-apiVersion: v2
-name: db-operator
-description: Manages database operators
-type: application
-version: 0.1.0
-dependencies:
-  - name: postgres-operator
-    repository: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
-    version: 1.13.0

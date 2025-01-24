@@ -1,3 +1,0 @@
-postgres-operator:
-  configGeneral:
-    enable_crd_registration: true

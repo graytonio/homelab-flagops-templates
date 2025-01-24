@@ -6,12 +6,12 @@ version: 0.1.0
 dependencies:
   - name: external-dns
     repository: https://charts.bitnami.com/bitnami
-    version: 8.7.1
+    version: 8.7.3
     alias: public
 
   - name: external-dns
     repository: https://charts.bitnami.com/bitnami
-    version: 8.7.1
+    version: 8.7.3
     alias: private
 
   - name: app-template

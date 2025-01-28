@@ -1,0 +1,9 @@
+apiVersion: v2
+name: awx
+description: Anisble automation platform for server operations
+type: application
+version: 0.1.0
+dependencies:
+  - name: awx-operator
+    repository: https://ansible-community.github.io/awx-operator-helm/
+    version: 2.19.1

@@ -3,3 +3,4 @@ awx-operator:
     enabled: true
     spec:
       postgres_data_volume_init: true
+

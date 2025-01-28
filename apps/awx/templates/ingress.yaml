@@ -1,0 +1,33 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: awx-ui
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: awx.graytonward.com
+    cert-manager.io/cluster-issuer: letsencrypt
+    traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: AWX Dashboard
+    gethomepage.dev/group: Infrastructure
+    gethomepage.dev/icon: awx.png
+    gethomepage.dev/name: AWX
+  labels:
+    access: private
+    name: argocd-ui
+spec:
+  ingressClassName: private-traffic
+  tls:
+    - hosts:
+      - awx.graytonward.com
+      secretName: tls-awx-ingress-dns
+  rules:
+  - host: awx.graytonward.com
+    http:
+      paths:
+      - pathType: Prefix
+        path: "/"
+        backend:
+          service:
+            name: awx-service
+            port: 
+              number: 80

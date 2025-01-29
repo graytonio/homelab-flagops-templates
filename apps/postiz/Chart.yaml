@@ -5,5 +5,5 @@ type: application
 version: 0.1.0
 dependencies:
   - name: postiz 
-    repository: ghcr.io/gitroomhq/postiz-helmchart/charts/postiz-app
+    repository: oci://ghcr.io/gitroomhq/postiz-helmchart/charts/postiz-app
     version: 2.19.1

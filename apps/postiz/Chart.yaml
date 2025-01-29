@@ -1,0 +1,9 @@
+apiVersion: v2
+name: postiz
+description: Social Media Automation Platform
+type: application
+version: 0.1.0
+dependencies:
+  - name: postiz 
+    repository: https://github.com/gitroomhq/postiz-helmchart
+    version: 2.19.1

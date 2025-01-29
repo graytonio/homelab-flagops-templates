@@ -4,6 +4,6 @@ description: Social Media Automation Platform
 type: application
 version: 0.1.0
 dependencies:
-  - name: postiz 
-    repository: oci://ghcr.io/gitroomhq/postiz-helmchart/charts/postiz-app
-    version: 2.19.1
+  - name: postiz-app
+    repository: oci://ghcr.io/gitroomhq/postiz-helmchart/charts/
+    version: 1.0.5

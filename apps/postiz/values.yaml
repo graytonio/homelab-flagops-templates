@@ -5,5 +5,7 @@ postiz-app:
   env:
     NEXT_PUBLIC_BACKEND_URL: "https://postiz.graytonward.com/api"
     FRONTEND_URL: "https://postiz.graytonward.com"
-    #secrets:
-    #DATABASE_URL: "postgresql://postiz-user:postiz-psql-password@postiz-production-postgresql.postiz.svc.cluster.local:5432/postiz-db-local"
+  secrets:
+    DATABASE_URL: "postgresql://postiz-user:postiz-psql-password@postiz-production-postgresql.postiz.svc.cluster.local:5432/postiz-db-local"
+    REDIS_URL: "redis://postiz-production-redis-headless.postiz.svc.cluster.local:6379"
+    JWT_SECRET: "secret-string"

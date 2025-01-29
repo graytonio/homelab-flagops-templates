@@ -2,6 +2,7 @@ postiz-app:
   postgresql:
     auth:
       password: 5Z7Hecb6GN
+      postgresPassword: 5Z7Hecb6GN
   env:
     MAIN_URL: "https://postiz.graytonward.com"
     NEXT_PUBLIC_BACKEND_URL: "https://postiz.graytonward.com/api"

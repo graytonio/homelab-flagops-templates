@@ -28,6 +28,6 @@ spec:
         path: "/"
         backend:
           service:
-            name: postiz-service
+            name: postiz-production-postiz-app
             port: 
               number: 80

@@ -4,13 +4,13 @@ postiz-app:
       enabled: true
     auth:
       user: postiz
-      password: 5Z7Hecb6GN
-      postgresPassword: 5Z7Hecb6GN
+      password: postiz-postgres
+      postgresPassword: postiz-postgres
   env:
     MAIN_URL: "https://postiz.graytonward.com"
     NEXT_PUBLIC_BACKEND_URL: "https://postiz.graytonward.com/api"
     FRONTEND_URL: "https://postiz.graytonward.com"
   secrets:
-    DATABASE_URL: "postgresql://postiz:5Z7Hecb6GN@postiz-production-postgresql.postiz.svc.cluster.local:5432/postiz"
+    DATABASE_URL: "postgresql://postiz:postiz-postgres@postiz-production-postgresql.postiz.svc.cluster.local:5432/postiz"
     REDIS_URL: "redis://:postiz-redis-password@postiz-production-redis-headless.postiz.svc.cluster.local:6379"
     JWT_SECRET: "secret-string"

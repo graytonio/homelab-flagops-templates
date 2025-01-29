@@ -1,6 +1,7 @@
 postiz-app:
   postgresql:
     auth:
+      user: postiz
       password: 5Z7Hecb6GN
       postgresPassword: 5Z7Hecb6GN
   env:

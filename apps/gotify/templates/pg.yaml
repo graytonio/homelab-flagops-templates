@@ -2,6 +2,8 @@ apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
   name: gotify-postgresql
+  annotations:
+    restarted: "Tue Apr 29 05:24:11 PM EDT 2025"
 spec:
   teamId: "gotify"
   volume:

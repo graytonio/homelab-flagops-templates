@@ -5,8 +5,8 @@ metadata:
 spec:
   teamId: "pirate-ship"
   volume:
-    size: 10Gi
-  numberOfInstances: 3
+    size: 50Gi
+  numberOfInstances: 1
   users:
     {{ .Values.global.pgUser }}:  # database owner
     - superuser

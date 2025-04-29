@@ -1,0 +1,3 @@
+postgres-operator:
+  configMajorVersionUpgrade:
+    major_version_upgrade_mode: "manual"

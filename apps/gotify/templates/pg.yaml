@@ -6,7 +6,7 @@ spec:
   teamId: "gotify"
   volume:
     size: 10Gi
-  numberOfInstances: 3
+  numberOfInstances: 1
   users:
     gotify:  # database owner
     - superuser

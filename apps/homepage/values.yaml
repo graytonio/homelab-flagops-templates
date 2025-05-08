@@ -1,5 +1,8 @@
 homepage:
   enableRbac: true
+  env:
+    - name: HOMEPAGE_ALLOWED_HOSTS
+      value: portal.[{ env "env_domain" }]
   serviceAccount:
     create: true
   ingress:

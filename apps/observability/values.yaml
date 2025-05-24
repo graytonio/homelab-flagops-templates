@@ -144,3 +144,13 @@ k8s-monitoring:
       forward_to = [prometheus.relabel.metrics_service.receiver]
     }
 
+    prometheus.scrape "plex" {
+      job_name = "integrations/plex"
+      scrape_interval = "30s"
+      targets = [
+        {"__address__" = "10.0.0.50:9000", "instance" = "vault"}
+      ]
+      honor_labels = true
+      forward_to = [prometheus.relabel.metrics_service.receiver]
+    }
+

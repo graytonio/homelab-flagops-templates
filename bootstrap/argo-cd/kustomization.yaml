@@ -20,14 +20,14 @@ patches:
     labelSelector: "app.kubernetes.io/name=argocd-redis-ha-haproxy"
   patch: |-
     apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: ignored
-      spec:
-        strategy:
-          type: RollingUpdate
-          rollingUpdate:
-            maxUnavailable: 1
+    kind: Deployment
+    metadata:
+      name: ignored
+    spec:
+      strategy:
+        type: RollingUpdate
+        rollingUpdate:
+          maxUnavailable: 1
 
 configMapGenerator:
 - name: argocd-cm

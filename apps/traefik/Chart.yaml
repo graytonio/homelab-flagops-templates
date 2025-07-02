@@ -14,5 +14,5 @@ dependencies:
     alias: privateingress
   - name: cert-manager
     repository: https://charts.jetstack.io
-    version: v1.18.1
+    version: v1.18.2
     condition: acme.enabled

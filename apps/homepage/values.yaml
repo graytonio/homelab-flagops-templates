@@ -30,6 +30,7 @@ homepage:
     - Infrastructure:
       - Vault:
           href: https://vault.graytonward.com
+          description: Central Storage Server
           icon: truenas
     - Streaming:
       - Twitch:
@@ -55,6 +56,10 @@ homepage:
       - HomeAssistant:
           href: https://home.graytonward.com
           description: Home Dashboard
+          icon: home-assistant-alt
+      - HomeAssistant Jup:
+          href: https://v7afwrzr70q21gpyktqqeqlbrvitwzo1.ui.nabu.casa/
+          description: Jupiter Home Dashboard
           icon: home-assistant-alt
       - Unifi:
           href: https://unifi.ui.com/

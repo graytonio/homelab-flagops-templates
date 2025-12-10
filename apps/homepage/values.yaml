@@ -32,13 +32,6 @@ homepage:
           href: https://vault.graytonward.com
           description: Central Storage Server
           icon: truenas
-    - Streaming:
-      - Twitch:
-          href: https://dashboard.twitch.tv/u/graytonio/home
-          icon: twitch
-      - YouTube:
-          href: https://studio.youtube.com/channel/UCYVRYd86F-3zLtyIIyyfrWQ
-          icon: youtube
     - Operations:
       - GitOps:
           href: https://github.com/graytonio/homelab-flagops-templates/tree/main
@@ -65,6 +58,13 @@ homepage:
           href: https://unifi.ui.com/
           description: Unifi Cloud Management Portal
           icon: unifi
+    - Streaming:
+      - Twitch:
+          href: https://dashboard.twitch.tv/u/graytonio/home
+          icon: twitch
+      - YouTube:
+          href: https://studio.youtube.com/channel/UCYVRYd86F-3zLtyIIyyfrWQ
+          icon: youtube
     widgets:
       - kubernetes:
           cluster:

@@ -77,6 +77,8 @@ adguard:
         - path: /opt/adguardhome/work
 
 private:
+  image:
+    repository: bitnamilegacy/external-dns
   podLabels:
     app.kubernetes.io/app: external-dns
   crd:
@@ -124,6 +126,8 @@ private:
         value: "false"
 
 public:
+  image:
+    repository: bitnamilegacy/external-dns
   podLabels:
     app.kubernetes.io/app: external-dns
   crd:

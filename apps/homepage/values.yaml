@@ -27,6 +27,10 @@ homepage:
   config:
     bookmarks:
     services:
+    - Infrastructure:
+      - Vault:
+          href: https://vault.graytonward.com
+          icon: truenas
     - Streaming:
       - Twitch:
           href: https://dashboard.twitch.tv/u/graytonio/home

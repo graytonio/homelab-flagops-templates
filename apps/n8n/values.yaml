@@ -1,0 +1,78 @@
+n8n:
+  controllers:
+    main:
+      enabled: true
+      replicas: 1
+      containers:
+        main:
+          nameOverride: n8n
+          image:
+            repository: n8nio/n8n
+            tag: 1.75.0
+            pullPolicy: IfNotPresent
+          env:
+            TZ: America/New_York
+            N8N_HOST: n8n.[{ env "env_domain" }]
+            N8N_PORT: "5678"
+            N8N_PROTOCOL: https
+            WEBHOOK_URL: https://n8n.[{ env "env_domain" }]/
+            GENERIC_TIMEZONE: America/New_York
+            # Database configuration
+            DB_TYPE: postgresdb
+            DB_POSTGRESDB_HOST: n8n-postgresql.n8n.svc.cluster.local
+            DB_POSTGRESDB_PORT: "5432"
+            DB_POSTGRESDB_DATABASE: n8n
+            DB_POSTGRESDB_USER: n8n
+            DB_POSTGRESDB_PASSWORD: n8n
+            # Encryption key for credentials - TODO: Move to secure secret
+            N8N_ENCRYPTION_KEY: n8n-encryption-key-change-me
+            # Execution mode
+            EXECUTIONS_MODE: regular
+            # Enable metrics
+            N8N_METRICS: "true"
+            N8N_METRICS_INCLUDE_DEFAULT_METRICS: "true"
+            N8N_METRICS_INCLUDE_WORKFLOW_ID_LABEL: "true"
+            N8N_METRICS_INCLUDE_NODE_TYPE_LABEL: "true"
+            N8N_METRICS_INCLUDE_CREDENTIAL_TYPE_LABEL: "true"
+
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 5678
+
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Workflow Automation
+        gethomepage.dev/group: Infrastructure
+        gethomepage.dev/icon: https://raw.githubusercontent.com/n8n-io/n8n/master/assets/n8n-logo.png
+        gethomepage.dev/name: n8n
+      labels:
+        access: private
+      tls:
+      - hosts:
+        - n8n.[{ env "env_domain" }]
+        secretName: tls-n8n-ingress-dns
+      hosts:
+        - host: n8n.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main
+
+  persistence:
+    data:
+      enabled: true
+      type: persistentVolumeClaim
+      accessMode: ReadWriteOnce
+      size: 10Gi
+      globalMounts:
+        - path: /home/node/.n8n

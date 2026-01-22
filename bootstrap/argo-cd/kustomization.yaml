@@ -2,7 +2,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 
 images:
 - name: quay.io/argoproj/argocd
-  newTag: v2.14.21
+  newTag: v3.2.6
 
 patches:
 - path: argocd-repo-server.yaml

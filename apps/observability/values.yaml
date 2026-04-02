@@ -30,15 +30,19 @@ k8s-monitoring:
 
   clusterMetrics:
     enabled: true
+    collector: alloy
 
   hostMetrics:
     enabled: true
+    collector: alloy
 
   podLogsViaLoki:
     enabled: true
+    collector: alloy-logs
 
   clusterEvents:
     enabled: true
+    collector: alloy-logs
 
   telemetryServices:
     kube-state-metrics:

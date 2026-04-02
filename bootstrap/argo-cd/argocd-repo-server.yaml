@@ -52,7 +52,7 @@ spec:
           - info
       - name: flagops-helm
         command: [/var/run/argocd/argocd-cmp-server]
-        image: quay.io/argoproj/argocd:v2.7.9
+        image: quay.io/argoproj/argocd:v3.3.6
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -84,7 +84,7 @@ spec:
       # flagops with Kustomize
       - name: flagops-kustomize
         command: [/var/run/argocd/argocd-cmp-server]
-        image: quay.io/argoproj/argocd:v2.7.9
+        image: quay.io/argoproj/argocd:v3.3.6
         securityContext:
           runAsNonRoot: true
           runAsUser: 999
@@ -116,7 +116,7 @@ spec:
       # flagops with plain YAML
       - name: flagops
         command: [/var/run/argocd/argocd-cmp-server]
-        image: quay.io/argoproj/argocd:v2.7.9
+        image: quay.io/argoproj/argocd:v3.3.6
         securityContext:
           runAsNonRoot: true
           runAsUser: 999

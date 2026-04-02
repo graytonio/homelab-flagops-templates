@@ -5,152 +5,148 @@ credentials:
 k8s-monitoring:
   cluster:
     name: dc-homelab
-  externalServices:
-    prometheus:
-      hostKey: prom-host
-      basicAuth:
+
+  destinations:
+    grafana-cloud-prometheus:
+      type: prometheus
+      urlFrom: convert.nonsensitive(remote.kubernetes.secret.grafana_cloud_prometheus.data["prom-host"]) + "/api/v1/write"
+      auth:
+        type: basic
         usernameKey: prom-username
         passwordKey: prom-password
       secret:
         create: false
         name: grafana-cloud-credentials
-    loki:
-      hostKey: loki-host
-      basicAuth:
+    grafana-cloud-loki:
+      type: loki
+      urlFrom: convert.nonsensitive(remote.kubernetes.secret.grafana_cloud_loki.data["loki-host"]) + "/loki/api/v1/push"
+      auth:
+        type: basic
         usernameKey: loki-username
         passwordKey: loki-password
       secret:
         create: false
         name: grafana-cloud-credentials
-  metrics:
+
+  clusterMetrics:
     enabled: true
-    cost:
-      enabled: false
+
+  hostMetrics:
+    enabled: true
+
+  podLogsViaLoki:
+    enabled: true
+
+  clusterEvents:
+    enabled: true
+
+  telemetryServices:
+    kube-state-metrics:
+      deploy: true
     node-exporter:
-      enabled: true
-  logs:
-    enabled: true
-    pod_logs:
-      enabled: true
-    cluster_events:
-      enabled: true
-  traces:
-    enabled: false
-  receivers:
-    grpc:
-      enabled: false
-    http:
-      enabled: false
-    zipkin:
-      enabled: false
-  opencost:
-    enabled: false
-  kube-state-metrics:
-    enabled: true
-  prometheus-node-exporter:
-    enabled: true
-  prometheus-operator-crds:
-    enabled: true
-  alloy: {}
-  alloy-logs: {}
-  extraConfig: |-
-    discovery.relabel "cert_manager" {
-      targets = discovery.kubernetes.services.targets
-      rule {
-        source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_name"]
-        regex = "cert-manager"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_service_port_number"]
-        regex = "9402"
-        action = "keep"
-      }
-      rule {
-          source_labels = ["__meta_kubernetes_pod_name"]
-          target_label = "instance"
-      }
-    }
+      deploy: true
 
-    prometheus.scrape "cert_manager" {
-      job_name     = "integrations/cert-manager"
-      targets      = discovery.relabel.cert_manager.output
-      honor_labels = true
-      forward_to   = [prometheus.relabel.metrics_service.receiver]
-    }
+  collectors:
+    alloy:
+      includeDestinations: [grafana-cloud-prometheus]
+      extraConfig: |-
+        discovery.relabel "cert_manager" {
+          targets = discovery.kubernetes.services.targets
+          rule {
+            source_labels = ["__meta_kubernetes_service_label_app_kubernetes_io_name"]
+            regex = "cert-manager"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_service_port_number"]
+            regex = "9402"
+            action = "keep"
+          }
+          rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label = "instance"
+          }
+        }
 
-    discovery.relabel "longhorn" {
-      targets = discovery.kubernetes.pods.targets
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
-        regex = "longhorn"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app"]
-        regex = "longhorn-manager"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_container_port_number"]
-        regex = "9500"
-        action = "keep"
-      }
-      rule {
-          source_labels = ["__meta_kubernetes_pod_name"]
-          target_label = "instance"
-      }
-    }
+        prometheus.scrape "cert_manager" {
+          job_name     = "integrations/cert-manager"
+          targets      = discovery.relabel.cert_manager.output
+          honor_labels = true
+          forward_to   = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
+        }
 
-    prometheus.scrape "longhorn" {
-      job_name     = "integrations/longhorn"
-      targets      = discovery.relabel.longhorn.output
-      honor_labels = true
-      forward_to   = [prometheus.relabel.metrics_service.receiver]
-    }
+        discovery.relabel "longhorn" {
+          targets = discovery.kubernetes.pods.targets
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            regex = "longhorn"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app"]
+            regex = "longhorn-manager"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_port_number"]
+            regex = "9500"
+            action = "keep"
+          }
+          rule {
+              source_labels = ["__meta_kubernetes_pod_name"]
+              target_label = "instance"
+          }
+        }
 
-    discovery.relabel "externaldns" {
-      targets = discovery.kubernetes.pods.targets
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
-        regex = "external-dns"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_container_port_number"]
-        regex = "7979"
-        action = "keep"
-      }
-      rule {
-        source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
-        target_label = "instance"
-      }
-    }
+        prometheus.scrape "longhorn" {
+          job_name     = "integrations/longhorn"
+          targets      = discovery.relabel.longhorn.output
+          honor_labels = true
+          forward_to   = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
+        }
 
-    prometheus.scrape "externaldns" {
-      job_name = "integrations/external-dns"
-      targets = discovery.relabel.externaldns.output
-      honor_labels = true
-      forward_to   = [prometheus.relabel.metrics_service.receiver]
-    }
+        discovery.relabel "externaldns" {
+          targets = discovery.kubernetes.pods.targets
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_app"]
+            regex = "external-dns"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_container_port_number"]
+            regex = "7979"
+            action = "keep"
+          }
+          rule {
+            source_labels = ["__meta_kubernetes_pod_label_app_kubernetes_io_name"]
+            target_label = "instance"
+          }
+        }
 
-    prometheus.scrape "truenas" {
-      job_name = "integrations/truenas"
-      scrape_interval = "30s"
-      targets = [
-        {"__address__" = "10.0.0.50:9108", "instance" = "vault"},
-      ]
-      honor_labels = true
-      forward_to = [prometheus.relabel.metrics_service.receiver]
-    }
+        prometheus.scrape "externaldns" {
+          job_name = "integrations/external-dns"
+          targets = discovery.relabel.externaldns.output
+          honor_labels = true
+          forward_to   = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
+        }
 
-    prometheus.scrape "plex" {
-      job_name = "integrations/plex"
-      scrape_interval = "30s"
-      targets = [
-        {"__address__" = "10.0.0.50:9000", "instance" = "vault"},
-      ]
-      honor_labels = true
-      forward_to = [prometheus.relabel.metrics_service.receiver]
-    }
+        prometheus.scrape "truenas" {
+          job_name = "integrations/truenas"
+          scrape_interval = "30s"
+          targets = [
+            {"__address__" = "10.0.0.50:9108", "instance" = "vault"},
+          ]
+          honor_labels = true
+          forward_to = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
+        }
 
+        prometheus.scrape "plex" {
+          job_name = "integrations/plex"
+          scrape_interval = "30s"
+          targets = [
+            {"__address__" = "10.0.0.50:9000", "instance" = "vault"},
+          ]
+          honor_labels = true
+          forward_to = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
+        }
+    alloy-logs: {}

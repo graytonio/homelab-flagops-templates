@@ -56,6 +56,9 @@ spec:
           kind: CustomResourceDefinition
           jsonPointers:
             - /spec/conversion/webhook/clientConfig/caBundle
+            - /spec/versions/0/selectableFields
+            - /spec/versions/1/selectableFields
+            - /spec/versions/2/selectableFields
       project: production
       sources:
         - path: '{{ .path.path }}'

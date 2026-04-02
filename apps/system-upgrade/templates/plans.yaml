@@ -1,0 +1,65 @@
+---
+# Server (control-plane) nodes must be upgraded before agent nodes.
+# This plan targets all control-plane nodes and upgrades them one at a time.
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: server-plan
+  namespace: system-upgrade
+spec:
+  concurrency: 1
+  cordon: true
+  channel: https://update.k3s.io/v1-release/channels/stable
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: In
+        values:
+          - "true"
+  serviceAccountName: system-upgrade
+  upgrade:
+    image: rancher/k3s-upgrade
+  window:
+    days:
+      - monday
+      - tuesday
+      - wednesday
+      - thursday
+      - friday
+    startTime: "02:00"
+    endTime: "05:00"
+    timeZone: America/New_York
+---
+# Agent nodes are upgraded after server nodes complete.
+# The prepare step blocks this plan until server-plan has finished.
+apiVersion: upgrade.cattle.io/v1
+kind: Plan
+metadata:
+  name: agent-plan
+  namespace: system-upgrade
+spec:
+  concurrency: 1
+  cordon: true
+  channel: https://update.k3s.io/v1-release/channels/stable
+  nodeSelector:
+    matchExpressions:
+      - key: node-role.kubernetes.io/control-plane
+        operator: DoesNotExist
+  prepare:
+    image: rancher/k3s-upgrade
+    args:
+      - prepare
+      - server-plan
+  serviceAccountName: system-upgrade
+  upgrade:
+    image: rancher/k3s-upgrade
+  window:
+    days:
+      - monday
+      - tuesday
+      - wednesday
+      - thursday
+      - friday
+    startTime: "02:00"
+    endTime: "05:00"
+    timeZone: America/New_York

@@ -37,14 +37,6 @@ configMapGenerator:
 - behavior: merge
   literals:
   - kustomize.buildOptions="--enable-alpha-plugins --enable-helm"
-  - |
-    repository.credentials=- passwordSecret:
-        key: git_token
-        name: autopilot-secret
-      url: https://github.com/
-      usernameSecret:
-        key: git_username
-        name: autopilot-secret
   name: argocd-cm
 - behavior: merge
   literals:
@@ -53,6 +45,6 @@ configMapGenerator:
 kind: Kustomization
 namespace: argocd
 resources:
-- https://raw.githubusercontent.com/argoproj/argo-cd/v2.13.3/manifests/ha/install.yaml
+- https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.6/manifests/ha/install.yaml
 - cmp-plugin.yaml
 - ingress.yaml

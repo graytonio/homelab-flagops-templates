@@ -18,10 +18,10 @@ spec:
   ingressClassName: private-traffic
   tls:
     - hosts:
-      - {{ .Values.publicingress.host }}
+      - {{ .Values.hosts.public }}
       secretName: tls-traefik-public-ingress-dns
   rules:
-  - host: {{ .Values.publicingress.host }}
+  - host: {{ .Values.hosts.public }}
     http:
       paths:
       - path: /
@@ -52,10 +52,10 @@ spec:
   ingressClassName: private-traffic
   tls:
     - hosts:
-      - {{ .Values.privateingress.host }}
+      - {{ .Values.hosts.private }}
       secretName: tls-traefik-private-ingress-dns
   rules:
-  - host: {{ .Values.privateingress.host }}
+  - host: {{ .Values.hosts.private }}
     http:
       paths:
       - path: /

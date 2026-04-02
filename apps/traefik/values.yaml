@@ -10,8 +10,11 @@ cloudflare:
   remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
   domain: [{ env "env_domain" }]
 
+hosts:
+  private: traefik.private.[{ env "env_domain" }]
+  public: traefik.public.[{ env "env_domain" }]
+
 privateingress:
-  host: traefik.private.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
     podAnnotations:
@@ -34,11 +37,12 @@ privateingress:
       enabled: false
   ports:
     web:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: true
+      http:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            permanent: true
   providers:
     kubernetesCRD:
       labelSelector: "access=private"
@@ -48,9 +52,8 @@ privateingress:
       publishedService:
         enabled: true
 
-        
+
 publicingress:
-  host: traefik.public.[{ env "env_domain" }]
   deployment:
     kind: DaemonSet
     podAnnotations:
@@ -73,11 +76,12 @@ publicingress:
       enabled: false
   ports:
     web:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: true
+      http:
+        redirections:
+          entryPoint:
+            to: websecure
+            scheme: https
+            permanent: true
   providers:
     kubernetesCRD:
       labelSelector: "access=public"
@@ -86,6 +90,6 @@ publicingress:
       labelSelector: "access=public"
       publishedService:
         enabled: true
-        
+
 cert-manager:
   installCRDs: true

@@ -1,6 +1,9 @@
 ---
 # Server (control-plane) nodes must be upgraded before agent nodes.
 # This plan targets all control-plane nodes and upgrades them one at a time.
+# NOTE: Step through one minor version at a time. Update channel to the next
+# minor version only after the cluster is fully healthy on the current version.
+# Upgrade path: v1.29 -> v1.30 -> v1.31 -> v1.32 -> v1.33 -> v1.34
 apiVersion: upgrade.cattle.io/v1
 kind: Plan
 metadata:
@@ -9,7 +12,7 @@ metadata:
 spec:
   concurrency: 1
   cordon: true
-  channel: https://update.k3s.io/v1-release/channels/stable
+  channel: https://update.k3s.io/v1-release/channels/v1.30
   nodeSelector:
     matchExpressions:
       - key: node-role.kubernetes.io/control-plane
@@ -19,16 +22,9 @@ spec:
   serviceAccountName: system-upgrade
   upgrade:
     image: rancher/k3s-upgrade
-  window:
-    days:
-      - monday
-      - tuesday
-      - wednesday
-      - thursday
-      - friday
-    startTime: "02:00"
-    endTime: "05:00"
-    timeZone: America/New_York
+  drain:
+    force: true
+    skipWaitForDeleteTimeout: 60
 ---
 # Agent nodes are upgraded after server nodes complete.
 # The prepare step blocks this plan until server-plan has finished.
@@ -40,7 +36,7 @@ metadata:
 spec:
   concurrency: 1
   cordon: true
-  channel: https://update.k3s.io/v1-release/channels/stable
+  channel: https://update.k3s.io/v1-release/channels/v1.30
   nodeSelector:
     matchExpressions:
       - key: node-role.kubernetes.io/control-plane
@@ -53,13 +49,6 @@ spec:
   serviceAccountName: system-upgrade
   upgrade:
     image: rancher/k3s-upgrade
-  window:
-    days:
-      - monday
-      - tuesday
-      - wednesday
-      - thursday
-      - friday
-    startTime: "02:00"
-    endTime: "05:00"
-    timeZone: America/New_York
+  drain:
+    force: true
+    skipWaitForDeleteTimeout: 60

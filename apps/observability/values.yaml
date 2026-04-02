@@ -55,6 +55,14 @@ k8s-monitoring:
       presets: [clustered, statefulset]
       includeDestinations: [grafana-cloud-prometheus]
       extraConfig: |-
+        discovery.kubernetes "services" {
+          role = "service"
+        }
+
+        discovery.kubernetes "pods" {
+          role = "pod"
+        }
+
         discovery.relabel "cert_manager" {
           targets = discovery.kubernetes.services.targets
           rule {

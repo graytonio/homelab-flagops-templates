@@ -52,6 +52,7 @@ k8s-monitoring:
 
   collectors:
     alloy:
+      presets: [clustered, statefulset]
       includeDestinations: [grafana-cloud-prometheus]
       extraConfig: |-
         discovery.relabel "cert_manager" {
@@ -154,4 +155,4 @@ k8s-monitoring:
           forward_to = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
         }
     alloy-logs:
-      presets: [filesystem-log-reader]
+      presets: [filesystem-log-reader, daemonset]

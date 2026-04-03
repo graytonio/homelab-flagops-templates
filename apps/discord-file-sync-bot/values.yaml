@@ -16,8 +16,8 @@ discord-bot:
         main:
           image: 
             repository: ghcr.io/graytonio/discord-file-sync
-            tag: latest
-            pullPolicy: Always
+            tag: v0.1.4
+            pullPolicy: IfNotPresent
           ports:
             - name: metrics
               containerPort: 2112

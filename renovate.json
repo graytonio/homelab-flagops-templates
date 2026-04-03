@@ -5,5 +5,16 @@
   ],
   "assignees": [
     "graytonio"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track container image tags in values.yaml files that use FlagOps template syntax (invalid YAML, skipped by helm-values manager)",
+      "fileMatch": ["apps/.+/values\\.yaml$"],
+      "matchStrings": [
+        "repository: (?<depName>[^\\n\\[]+)\\n\\s+tag: (?<currentValue>[^\\n\\[]+)"
+      ],
+      "datasourceTemplate": "docker"
+    }
   ]
 }

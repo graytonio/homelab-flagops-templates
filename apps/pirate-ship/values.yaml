@@ -22,7 +22,7 @@ radarr:
         main:
           image:
             repository: linuxserver/radarr
-            tag: 5.26.2
+            tag: 6.1.1
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022

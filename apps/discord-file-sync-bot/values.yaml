@@ -16,7 +16,7 @@ discord-bot:
         main:
           image: 
             repository: ghcr.io/graytonio/discord-file-sync
-            tag: v0.1.4
+            tag: 0.1.4
             pullPolicy: IfNotPresent
           ports:
             - name: metrics

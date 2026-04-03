@@ -9,7 +9,7 @@ k8s-monitoring:
   destinations:
     grafana-cloud-prometheus:
       type: prometheus
-      urlFrom: convert.nonsensitive(remote.kubernetes.secret.grafana_cloud_prometheus.data["prom-host"]) + "/api/v1/write"
+      urlFrom: convert.nonsensitive(remote.kubernetes.secret.grafana_cloud_prometheus.data["prom-host"]) + "/api/prom/push"
       auth:
         type: basic
         usernameKey: prom-username

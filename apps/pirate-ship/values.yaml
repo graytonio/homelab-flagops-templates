@@ -327,7 +327,7 @@ lidarr:
         main:
           image:
             repository: linuxserver/lidarr
-            tag: 2.12.4
+            tag: 3.1.0
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022

@@ -11,7 +11,7 @@ data:
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
             <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
-            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationMethod>Forms</AuthenticationMethod>
             <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>master</Branch>
             <LogLevel>info</LogLevel>
@@ -41,7 +41,7 @@ data:
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
             <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
-            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationMethod>Forms</AuthenticationMethod>
             <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>main</Branch>
             <LogLevel>info</LogLevel>
@@ -71,7 +71,7 @@ data:
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
             <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
-            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationMethod>Forms</AuthenticationMethod>
             <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>master</Branch>
             <LogLevel>info</LogLevel>
@@ -101,7 +101,7 @@ data:
             <EnableSsl>False</EnableSsl>
             <LaunchBrowser>True</LaunchBrowser>
             <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
-            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationMethod>Forms</AuthenticationMethod>
             <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
             <Branch>master</Branch>
             <LogLevel>info</LogLevel>

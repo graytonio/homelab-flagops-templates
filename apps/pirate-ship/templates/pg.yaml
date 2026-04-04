@@ -18,5 +18,7 @@ spec:
     sonarrlog: {{ .Values.global.pgUser }}
     prowlarrmain: {{ .Values.global.pgUser }}
     prowlarrlog: {{ .Values.global.pgUser }}
+    lidarrmain: {{ .Values.global.pgUser }}
+    lidarrlog: {{ .Values.global.pgUser }}
   postgresql:
     version: "17"

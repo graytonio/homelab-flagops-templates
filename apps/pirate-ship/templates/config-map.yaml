@@ -87,3 +87,33 @@ data:
             <PostgresMainDb>prowlarrmain</PostgresMainDb>
             <PostgresLogDb>prowlarrlog</PostgresLogDb>
         </Config>
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+    name: lidarr-configxml
+data:
+    config.xml: |
+        <Config>
+            <BindAddress>*</BindAddress>
+            <Port>8686</Port>
+            <SslPort>9898</SslPort>
+            <EnableSsl>False</EnableSsl>
+            <LaunchBrowser>True</LaunchBrowser>
+            <ApiKey>{{ .Values.global.apiKey }}</ApiKey>
+            <AuthenticationMethod>Basic</AuthenticationMethod>
+            <AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired>
+            <Branch>master</Branch>
+            <LogLevel>info</LogLevel>
+            <SslCertPath></SslCertPath>
+            <SslCertPassword></SslCertPassword>
+            <UrlBase></UrlBase>
+            <InstanceName>Lidarr</InstanceName>
+            <UpdateMechanism>Docker</UpdateMechanism>
+            <PostgresUser>{{ .Values.global.pgUser }}</PostgresUser>
+            <PostgresPassword>{{ .Values.global.pgPassword }}</PostgresPassword>
+            <PostgresPort>5432</PostgresPort>
+            <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
+            <PostgresMainDb>lidarrmain</PostgresMainDb>
+            <PostgresLogDb>lidarrlog</PostgresLogDb>
+        </Config>

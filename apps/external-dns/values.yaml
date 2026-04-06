@@ -126,6 +126,7 @@ private:
         value: "false"
 
 public:
+  enabled: [{ env "external_dns_public_enabled" }]
   image:
     repository: bitnamilegacy/external-dns
   podLabels:

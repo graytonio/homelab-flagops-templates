@@ -4,7 +4,7 @@ metadata:
   name: plex-benchmarker
   namespace: {{ .Release.Namespace }}
   labels:
-    app: plex-benchmarker
+    app.kubernetes.io/name: plex-benchmarker
 spec:
   schedule: "0 2 * * 0"
   concurrencyPolicy: Forbid
@@ -17,12 +17,12 @@ spec:
       template:
         metadata:
           labels:
-            app: plex-benchmarker
+            app.kubernetes.io/name: plex-benchmarker
         spec:
           restartPolicy: Never
           containers:
             - name: plex-benchmarker
-              image: ghcr.io/graytonw/plex-benchmarker:v1.0.0
+              image: ghcr.io/graytonw/plex-benchmarker:{{ .Values.image.tag }}
               imagePullPolicy: IfNotPresent
               args:
                 - --host=$(PLEX_HOST)

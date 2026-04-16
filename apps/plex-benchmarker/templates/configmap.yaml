@@ -3,5 +3,7 @@ kind: ConfigMap
 metadata:
   name: plex-benchmarker
   namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: plex-benchmarker
 data:
   PLEX_HOST: {{ .Values.plexHost | quote }}

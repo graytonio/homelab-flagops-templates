@@ -1,0 +1,47 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: plex-benchmarker
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: plex-benchmarker
+spec:
+  schedule: "0 2 * * 0"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 7200
+      backoffLimit: 0
+      template:
+        metadata:
+          labels:
+            app: plex-benchmarker
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: plex-benchmarker
+              image: ghcr.io/graytonw/plex-benchmarker:v1.0.0
+              imagePullPolicy: IfNotPresent
+              args:
+                - --host=$(PLEX_HOST)
+                - --resolution=both
+                - --type=both
+                - --ramp-interval=10s
+                - --stability-window=30s
+                - --startup-grace=5s
+                - --json
+              env:
+                - name: PLEX_HOST
+                  valueFrom:
+                    configMapKeyRef:
+                      name: plex-benchmarker
+                      key: PLEX_HOST
+              resources:
+                requests:
+                  cpu: 100m
+                  memory: 64Mi
+                limits:
+                  cpu: 500m
+                  memory: 128Mi

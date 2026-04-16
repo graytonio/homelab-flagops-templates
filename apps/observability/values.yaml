@@ -167,10 +167,11 @@ k8s-monitoring:
           job_name        = "integrations/plex-benchmarker"
           scrape_interval = "60s"
           targets = [
-            {"__address__" = "prometheus-pushgateway.plex-benchmarker:9091"},
+            {"__address__" = "prometheus-pushgateway.plex-benchmarker:9091", "instance" = "plex-benchmarker"},
           ]
           honor_labels = true
           forward_to = [prometheus.remote_write.grafana_cloud_prometheus.receiver]
         }
+
     alloy-logs:
       presets: [filesystem-log-reader, daemonset]

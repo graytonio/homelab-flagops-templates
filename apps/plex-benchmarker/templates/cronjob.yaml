@@ -22,7 +22,7 @@ spec:
           restartPolicy: Never
           containers:
             - name: plex-benchmarker
-              image: ghcr.io/graytonw/plex-benchmarker:{{ .Values.image.tag }}
+              image: ghcr.io/graytonio/plex-benchmarker:{{ .Values.image.tag }}
               imagePullPolicy: IfNotPresent
               args:
                 - --host=$(PLEX_HOST)

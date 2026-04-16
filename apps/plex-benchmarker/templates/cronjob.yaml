@@ -32,6 +32,7 @@ spec:
                 - --stability-window=30s
                 - --startup-grace=5s
                 - --json
+                - --pushgateway=prometheus-pushgateway:9091
               env:
                 - name: PLEX_HOST
                   valueFrom:

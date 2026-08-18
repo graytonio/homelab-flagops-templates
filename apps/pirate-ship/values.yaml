@@ -108,7 +108,7 @@ sonarr:
         main:
           image:
             repository: linuxserver/sonarr
-            tag: 4.0.17
+            tag: 4.0.19
             pullPolicy: IfNotPresent
           env:
             UMASK_SET: 022

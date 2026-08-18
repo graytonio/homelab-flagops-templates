@@ -28,7 +28,8 @@ privateingress:
   additionalArguments:
     - --api.insecure=true
   service:
-    loadBalancerIP: [{ env "private_ingress_lbip" }]
+    spec:
+      loadBalancerIP: [{ env "private_ingress_lbip" }]
   ingressClass:
     name: private-traffic
     isDefaultClass: true
@@ -67,7 +68,8 @@ publicingress:
   additionalArguments:
     - --api.insecure=true
   service:
-    loadBalancerIP: [{ env "public_ingress_lbip" }]
+    spec:
+      loadBalancerIP: [{ env "public_ingress_lbip" }]
   ingressClass:
     name: public-traffic
     isDefaultClass: false

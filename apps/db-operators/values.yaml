@@ -1,3 +1,5 @@
 postgres-operator:
   configMajorVersionUpgrade:
     major_version_upgrade_mode: "manual"
+  configGeneral:
+    kubernetes_use_configmaps: false

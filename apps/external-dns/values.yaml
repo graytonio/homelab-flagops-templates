@@ -5,8 +5,10 @@ adguard:
     main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
-        main: 
+        main:
           nameOverride: adguard
           image:
             repository: adguard/adguardhome
@@ -24,6 +26,7 @@ adguard:
     main:
       controller: main
       primary: true
+      forceRename: external-dns-adguard
       ports:
         http:
           port: 80

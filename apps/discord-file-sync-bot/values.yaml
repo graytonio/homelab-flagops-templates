@@ -6,6 +6,8 @@ discord-bot:
     main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       pod:
         annotations:
           k8s.grafana.com/scrape: "true"

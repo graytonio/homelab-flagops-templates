@@ -159,6 +159,11 @@ Helm version updates are managed through **Renovate PRs**:
 4. For safe (minor/patch) bumps: merge and monitor ArgoCD
 5. For major bumps: prepare `values.yaml` migration on a branch, merge with the PR, then monitor
 
+> For the full batch workflow — parallel per-PR research subagents, one-at-a-time
+> merge-then-verify, ArgoCD rollout tracking, PVC-safety snapshots, and the
+> render-and-diff technique for verifying major bumps — see the
+> `renovate-pr-rollout` skill (`.claude/skills/renovate-pr-rollout/SKILL.md`).
+
 ### Manual Dependency Updates (if needed)
 
 **Update all dependencies:**
@@ -267,6 +272,28 @@ kubectl -n argocd get application -w
 kubectl -n argocd get application <app-name> -o jsonpath='{.status.sync.status} {.status.health.status}'
 ```
 
+**Multi-source Applications have no `.status.sync.revision`:**
+Many Applications in this repo use the FlagOps Helm CMP plugin as a
+multi-source Application (`spec.sources`, plural, not `spec.source`
+singular). For these, `.status.sync.revision` stays empty forever — a
+polling loop watching that field will spin without ever detecting a
+completed sync. The synced git revision instead lives at
+`.status.history[-1:].revisions[0]` (a list, even with one source):
+```bash
+kubectl -n argocd get application <app-name> \
+  -o jsonpath='{.status.history[-1:].revisions[0]}'
+```
+When scripting "did my merge land" checks, compare this against the merge
+commit SHA (`gh pr view <n> --json mergeCommit -q '.mergeCommit.oid'`), and
+also require `.status.sync.status == Synced`,
+`.status.health.status == Healthy`, and
+`.status.operationState.phase == Succeeded` together — ArgoCD's aggregate
+"Healthy" status can lag a few seconds behind reality (check
+`kubectl get pods` directly), and StatefulSet/DaemonSet rollouts (e.g.
+ArgoCD's own redis-ha-server, observability's Alloy) can sit at
+"Progressing" for several minutes during ordinal-by-ordinal replacement —
+normal, not a failure, as long as no pod is actually crash-looping.
+
 ### Environment Variable References
 
 If `[{ env "VAR" }]` isn't resolved:
@@ -298,6 +325,12 @@ Major schema rewrite from v1 → v4. See migration section below.
 - Large CRDs (e.g. `applicationsets.argoproj.io`) exceed the 262KB client-side apply annotation limit
 - The `bootstrap/argo-cd.yaml` Application **must** have `ServerSideApply=true` in syncOptions
 - `repository.credentials` key in argocd-cm was removed in v3; use labeled `repo-creds` Secrets instead
+
+**Release-name-dependent resource naming (app-template and similar charts):**
+- ArgoCD Application/Helm release names in this repo are typically `<app>-production`, not just `<app>`.
+- Helm's default fullname template uses `<release-name>-<chart-name>` (or just `<release-name>` if it already contains the chart name) unless `fullnameOverride` is set.
+- Any app that does **not** set `fullnameOverride` will therefore get resources named with the `-production` suffix baked in — e.g. a PVC ends up `gotify-production-data`, not `gotify-data`.
+- This matters for any major-version migration that pins/renames resources (e.g. bjw-s app-template v5's `forceRename`): compute the pinned name using the **actual live release name**, then verify it against the real cluster resource (`kubectl get pvc -n <namespace>`) before merging — a mismatch here silently orphans the old PVC. See the `renovate-pr-rollout` skill for the full render-and-diff verification technique.
 
 ### AppOrder Dependencies
 

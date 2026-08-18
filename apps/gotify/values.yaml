@@ -1,8 +1,10 @@
 gotify:
-  controllers: 
+  controllers:
     main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           nameOverride: gotify
@@ -54,5 +56,6 @@ gotify:
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
       size: 10Gi
+      forceRename: gotify-production-data
       globalMounts:
         - path: /app/data

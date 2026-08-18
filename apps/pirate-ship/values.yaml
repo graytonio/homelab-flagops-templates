@@ -15,9 +15,11 @@ radarr:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   controllers:
-    main: 
+    main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -97,9 +99,11 @@ sonarr:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sonarr
   controllers:
-    main: 
+    main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -176,9 +180,11 @@ prowlarr:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-prowlarr
   controllers:
-    main: 
+    main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -247,9 +253,11 @@ sabnzbd:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sabnzbd
   controllers:
-    main: 
+    main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -305,6 +313,7 @@ sabnzbd:
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
       size: 25Gi
+      forceRename: pirate-ship-sabnzbd-config
       globalMounts:
         - path: /config
 
@@ -323,6 +332,8 @@ lidarr:
     main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -400,9 +411,11 @@ overseerr:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-overseer
   controllers:
-    main: 
+    main:
       enabled: true
       replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
       containers:
         main:
           image:
@@ -452,5 +465,6 @@ overseerr:
       type: persistentVolumeClaim
       accessMode: ReadWriteOnce
       size: 1Gi
+      forceRename: pirate-ship-overseerr-config
       globalMounts:
         - path: /config

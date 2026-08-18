@@ -45,6 +45,6 @@ configMapGenerator:
 kind: Kustomization
 namespace: argocd
 resources:
-- https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.6/manifests/ha/install.yaml
+- https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.1/manifests/ha/install.yaml
 - cmp-plugin.yaml
 - ingress.yaml

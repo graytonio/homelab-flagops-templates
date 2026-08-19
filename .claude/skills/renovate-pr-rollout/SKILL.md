@@ -155,6 +155,46 @@ When a research agent returns NEEDS MANUAL CHANGES:
 6. `gh pr merge <number> --squash --delete-branch`.
 7. Track per Phase 3, with extra scrutiny per Phase 4 if PVCs are involved.
 
+**Gotcha — Helm never upgrades existing CRDs.** `helm template`/`helm install`
+only *installs* CRDs from a chart's `crds/` directory if they're missing —
+it never updates ones already in the cluster, even on a major version bump.
+If the new chart's manifests use fields the old CRD schema doesn't know
+about, ArgoCD's sync gets stuck with a `ComparisonError` (sync status
+`Unknown`) reading something like:
+
+```
+error building typed value from config resource: .configuration.<field>: field not declared in schema
+```
+
+or, after the CRD partially catches up, a `SyncError` naming the still-missing
+fields. Nothing is broken yet at this point — the workload keeps running on
+its pre-upgrade state until the sync actually completes, so there's no rush,
+but the sync won't resolve on its own. Fix: pull the CRDs from the *new*
+chart version (they live in `<chart>/crds/*.yaml` in the tarball you already
+pulled for the render-diff sub-technique) and apply them directly:
+
+```bash
+kubectl apply --server-side --force-conflicts -f new/<chart>/crds/<file>.yaml
+```
+
+Before applying, diff the CRD against the live one (`kubectl get crd <name>
+-o yaml`) to confirm the change is additive (new optional fields) rather than
+removing/renaming anything a live custom resource depends on — same
+diligence as the resource-render diff below, just applied to the CRD schema
+itself. Once applied, ArgoCD's next reconcile (automatic, since `selfHeal` is
+on for every Application in this repo) picks it up — no manual re-sync
+needed, but re-check status a few seconds later since a stale `SyncError`
+condition can still be showing from before the CRD fix landed.
+
+This happened on the postgres-operator v1→v2 bump: the `OperatorConfiguration`
+CRD was missing `enable_maintenance_windows` and (after the first CRD apply)
+`logical_backup.logical_backup_failed_jobs_history_limit` too — the chart
+adds fields incrementally across its own default values, so check the sync
+error message again after each CRD apply rather than assuming one pass gets
+everything. All three of the operator's CRDs
+(`operatorconfigurations`, `postgresqls`, `postgresteams`) may need updating
+together even if the sync error only names one.
+
 ## Sub-technique: verify a major bump by rendering, not reading
 
 This is the highest-value technique in this workflow — it has caught real
@@ -224,3 +264,24 @@ exact app once assumed the release name was `gotify` and computed the wrong
 `kubectl get pvc -n <namespace>` live output before merging. **Always verify
 any computed/pinned resource name against the live cluster resource, for any
 app without an explicit `fullnameOverride`, before trusting a local render.**
+
+**Gotcha — a research subagent's NEEDS MANUAL CHANGES verdict can overstate
+the risk.** Subagents reason from changelogs and schema diffs, which flag a
+value as "moved" or "renamed" without knowing whether this repo's config for
+that value was ever actually wired up in the first place. On the Traefik
+v39→v41 bump, a research pass correctly found that `service.loadBalancerIP`
+moved to `service.spec.loadBalancerIP` in v40, and flagged it as blocking
+since this repo set the old top-level key. Tracing the *actual* Go template
+in both the old and new chart tarballs (`grep -rn loadBalancerIP
+old/<chart>/templates/`, then read the helper template that consumes it)
+showed the old chart never read the top-level key at all — it was already a
+silent no-op, and the LoadBalancer IP's real stability came from MetalLB
+remembering the assignment per Service object, not from this Helm value. The
+fix was still worth making (for correctness, and so the pin becomes
+functional for the first time), but it was not a break — a plain `helm
+template ... > /tmp/out.yaml` with the repo's as-is values against the new
+chart, checked for a non-zero exit or schema error, confirmed no sync
+failure either way. **Before treating a subagent's blocking verdict as fact,
+spend two minutes tracing whether the field was actually consumed by the
+currently-deployed chart version** — it changes both the urgency and the
+correct fix.

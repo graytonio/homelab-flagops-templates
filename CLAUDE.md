@@ -252,6 +252,22 @@ Check for:
 - Resource conflicts (ignoreDifferences not enough)
 - Missing dependencies (wait for other apps to deploy)
 - CRD conversion webhook issues (common with Bitnami charts)
+- Stale CRDs after a chart major bump (see below)
+
+**"field not declared in schema" / sync status `Unknown`:**
+Helm never upgrades CRDs already installed in the cluster, even on a major
+version bump — it only installs ones that are missing. If a chart's new
+manifests use fields the live CRD schema doesn't have, ArgoCD's comparison
+fails outright (sync status `Unknown`, a `ComparisonError` condition) or, once
+partially fixed, `SyncError` naming the still-missing fields. The workload
+itself isn't affected until the sync completes, so this is a stuck sync, not
+a live incident. Fix: pull the new chart version, apply its `crds/*.yaml`
+directly (`kubectl apply --server-side --force-conflicts -f
+new/<chart>/crds/<file>.yaml`), diff against the live CRD first to confirm
+the change is additive. A chart's own CRDs can add fields across more than
+one version, so re-check the sync error after each apply — don't assume one
+pass covers everything. See the `renovate-pr-rollout` skill for the full
+case study (postgres-operator v1→v2).
 
 **Trigger sync without argocd CLI** (use when `argocd` binary is unavailable):
 ```bash

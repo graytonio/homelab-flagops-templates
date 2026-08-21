@@ -7,6 +7,8 @@ coder:
   # subchart's templates.
   coder:
     service:
+      # Traefik fronts this via the Ingress below; the chart default of
+      # LoadBalancer would otherwise consume a MetalLB IP unnecessarily.
       type: ClusterIP
 
     ingress:
@@ -17,6 +19,7 @@ coder:
         cert-manager.io/cluster-issuer: letsencrypt
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
       tls:
+        # cert-manager/Traefik terminate TLS at the ingress, same as gotify/homepage.
         enable: false
 
     env:

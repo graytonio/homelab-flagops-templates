@@ -13,6 +13,12 @@ gotify:
             tag: 3.0.0
             pullPolicy: IfNotPresent
           env:
+            # PGUSER/PGPASSWORD come from the postgres-operator's
+            # auto-generated credentials secret (no manual secret.yaml here
+            # anymore). On merge, ArgoCD prunes the old hardcoded secret
+            # before the operator's next repair cycle (up to 5m) regenerates
+            # it, so a brief CreateContainerConfigError on this pod during
+            # rollout is expected and self-heals — not a regression.
             - name: TZ
               value: America/New_York
             - name: GOTIFY_DATABASE_DIALECT

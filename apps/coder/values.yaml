@@ -42,4 +42,4 @@ coder:
       - name: CODER_PG_CONNECTION_URL
         value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
       - name: CODER_ACCESS_URL
-        value: "https://coder.[{ env \"env_domain\" }]"
+        value: https://coder.[{ env "env_domain" }]

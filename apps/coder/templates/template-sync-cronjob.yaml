@@ -12,10 +12,14 @@ metadata:
 rules:
   - apiGroups: [""]
     resources: ["configmaps"]
-    verbs: ["get", "create", "patch"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["coder-template-sync-state"]
+    verbs: ["get", "patch"]
   - apiGroups: ["apps"]
     resources: ["daemonsets"]
-    verbs: ["get", "create", "patch", "delete"]
+    verbs: ["get", "create", "patch", "delete", "watch"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
@@ -44,7 +48,7 @@ spec:
   jobTemplate:
     spec:
       backoffLimit: 0
-      activeDeadlineSeconds: 600
+      activeDeadlineSeconds: 900
       template:
         spec:
           serviceAccountName: coder-template-sync
@@ -54,7 +58,7 @@ spec:
               image: alpine/k8s:1.36.2
               command: ["/bin/sh", "/scripts/sync.sh"]
               env:
-                - name: CODER_TOKEN
+                - name: CODER_SESSION_TOKEN
                   valueFrom:
                     secretKeyRef:
                       name: coder-template-sync-token

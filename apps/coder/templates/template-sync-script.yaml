@@ -12,10 +12,11 @@ data:
     STATE_CONFIGMAP="coder-template-sync-state"
     NAMESPACE="coder"
     CODER_URL="http://coder.coder.svc.cluster.local"
+    export CODER_URL
     PREPULL_DAEMONSET="coder-template-image-prepull"
 
     WORKDIR=$(mktemp -d)
-    git clone --depth 50 --quiet "$REPO_URL" "$WORKDIR/repo"
+    git clone --quiet "$REPO_URL" "$WORKDIR/repo"
     cd "$WORKDIR/repo"
 
     kubectl get configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" >/dev/null 2>&1 || \
@@ -56,11 +57,13 @@ data:
                   cpu: 10m
                   memory: 16Mi
     EOF
-      kubectl rollout status daemonset/"$PREPULL_DAEMONSET" -n "$NAMESPACE" --timeout=600s
-      kubectl delete daemonset "$PREPULL_DAEMONSET" -n "$NAMESPACE"
-
-      kubectl patch configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" --type merge \
-        -p "{\"data\":{\"prepulled_image\":\"${current_image}\"}}"
+      if kubectl rollout status daemonset/"$PREPULL_DAEMONSET" -n "$NAMESPACE" --timeout=480s; then
+        kubectl patch configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" --type merge \
+          -p "{\"data\":{\"prepulled_image\":\"${current_image}\"}}"
+      else
+        echo "Pre-pull rollout did not complete in time; leaving state unset so the next run retries"
+      fi
+      kubectl delete daemonset "$PREPULL_DAEMONSET" -n "$NAMESPACE" --ignore-not-found
     fi
 
     for template_dir in coder-templates/*/; do
@@ -75,7 +78,6 @@ data:
       fi
 
       echo "[$template_name] change detected ($last_sha -> $current_sha), pushing"
-      coder login "$CODER_URL" --token "$CODER_TOKEN"
       coder templates push "$template_name" -d "$template_dir" --yes
 
       kubectl patch configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" --type merge \

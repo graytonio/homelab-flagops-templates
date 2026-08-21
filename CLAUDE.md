@@ -317,6 +317,33 @@ If `[{ env "VAR" }]` isn't resolved:
 2. Check the ApplicationSet generator is picking up the right file
 3. Verify `FLAGOPS_ENVIRONMENT` is set correctly
 
+**`helm lint`/`helm template` passing locally does NOT mean the flagops CMP will render the same manifest:**
+The `flagops` binary (`scripts/generate-helm.sh` in `graytonio/flagops`, run by the `argocd-repo-server`'s
+CMP sidecar) parses **every file in an app directory as a raw Go `text/template`** (custom delimiters
+`[{`/`}]`) *before* Helm or even YAML parsing ever sees it — this preprocessing step is completely
+bypassed when you run plain `helm lint`/`helm template` locally, since those never invoke `flagops` at all.
+Two consequences:
+- Any `\"` (backslash-escaped quote) inside a `[{ env "..." }]` expression — which YAML's own
+  double-quoted-string syntax can tempt you into writing, e.g. `value: "https://foo.[{ env \"env_domain\" }]"`
+  — is a **hard parse error** for Go's text/template (a bare `\` isn't a valid token there). Since
+  `generate-helm.sh` has no `set -e`, a parse failure doesn't abort the script — it silently proceeds to
+  `helm dependency build`/`helm template` with that file simply missing from the generated output, so the
+  chart falls back to its own defaults with no visible error anywhere in ArgoCD's UI. Always write `[{ env "..." }]`
+  as an **unquoted plain YAML scalar** (`host: foo.[{ env "env_domain" }]`), matching every other app in this repo —
+  never wrap it in a quoted string that requires escaping the inner quotes.
+- Because this failure mode produces no sync error and no obviously-wrong ArgoCD status, the only reliable way
+  to catch it is checking the **actual live resources** after a real sync (`kubectl get <resource> -o yaml` /
+  `-o jsonpath`) against what you intended — not just trusting `helm template` output or ArgoCD's `Synced`/`Healthy`
+  status, both of which can look completely fine while the CMP quietly dropped your values file.
+
+**postgres-operator (Spilo) rejects `sslmode=disable`:**
+The Zalando postgres-operator's Spilo image ships a `pg_hba.conf` with `hostssl`-only rules — any connection
+string using `sslmode=disable` gets rejected outright (`pg_hba.conf rejects connection ... no encryption`),
+even though the app-side driver may retry indefinitely without a clear top-level error in `kubectl get pods`
+(shows as a crash-looping/retrying app container, not a Postgres-side failure). Use `sslmode=require` (or omit
+`sslmode` entirely, which most drivers default to something SSL-compatible like `prefer`) in any
+`CONNECTION_URL`-style DSN pointed at a `postgresql` CRD-backed database in this cluster.
+
 ### Common Chart Issues
 
 **Bitnami external-dns:**

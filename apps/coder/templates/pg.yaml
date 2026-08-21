@@ -1,0 +1,17 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: coder-postgresql
+spec:
+  teamId: "coder"
+  volume:
+    size: 20Gi
+  numberOfInstances: 1
+  users:
+    coder:
+    - superuser
+    - createdb
+  databases:
+    coder: coder
+  postgresql:
+    version: "17"

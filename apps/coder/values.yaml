@@ -1,0 +1,45 @@
+coder:
+  # The upstream coder chart namespaces its own values under a top-level
+  # `coder:` key internally (its templates read .Values.coder.ingress,
+  # .Values.coder.service, etc). Since this dependency is aliased as `coder`
+  # in Chart.yaml, this outer `coder:` block becomes the subchart's root
+  # Values — so it must be nested one level deeper to actually reach the
+  # subchart's templates.
+  coder:
+    service:
+      # Traefik fronts this via the Ingress below; the chart default of
+      # LoadBalancer would otherwise consume a MetalLB IP unnecessarily.
+      type: ClusterIP
+
+    ingress:
+      enable: true
+      className: private-traffic
+      host: coder.[{ env "env_domain" }]
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      tls:
+        # This chart only emits the Ingress's tls: stanza (host + secretName)
+        # when enable is true - cert-manager's ingress-shim needs that stanza
+        # present to provision a Certificate. Unlike Traefik's own charts,
+        # "false" here doesn't mean "TLS terminates elsewhere", it means "no
+        # TLS block at all" (verified against templates/ingress.yaml in the
+        # upstream chart). Matches the homepage/truenas-scale pattern.
+        enable: true
+        secretName: tls-coder-ingress-dns
+
+    env:
+      - name: PGUSER
+        valueFrom:
+          secretKeyRef:
+            name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+            key: username
+      - name: PGPASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+            key: password
+      - name: CODER_PG_CONNECTION_URL
+        value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
+      - name: CODER_ACCESS_URL
+        value: "https://coder.[{ env \"env_domain\" }]"

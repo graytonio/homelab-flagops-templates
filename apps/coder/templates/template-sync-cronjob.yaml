@@ -1,0 +1,73 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-template-sync
+  namespace: coder
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-template-sync
+  namespace: coder
+rules:
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["configmaps"]
+    resourceNames: ["coder-template-sync-state"]
+    verbs: ["get", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["daemonsets"]
+    verbs: ["get", "create", "patch", "delete", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-template-sync
+  namespace: coder
+subjects:
+  - kind: ServiceAccount
+    name: coder-template-sync
+    namespace: coder
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-template-sync
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: coder-template-sync
+  namespace: coder
+spec:
+  schedule: "*/15 * * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      activeDeadlineSeconds: 900
+      template:
+        spec:
+          serviceAccountName: coder-template-sync
+          restartPolicy: Never
+          containers:
+            - name: sync
+              image: alpine/k8s:1.36.2
+              command: ["/bin/sh", "/scripts/sync.sh"]
+              env:
+                - name: CODER_SESSION_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: coder-template-sync-token
+                      key: token
+              volumeMounts:
+                - name: script
+                  mountPath: /scripts
+          volumes:
+            - name: script
+              configMap:
+                name: coder-template-sync-script
+                defaultMode: 0755

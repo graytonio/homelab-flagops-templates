@@ -15,6 +15,15 @@
         "repository: (?<depName>[^\\n\\[]+)\\n\\s+tag: (?<currentValue>[^\\n\\[]+)"
       ],
       "datasourceTemplate": "docker"
+    },
+    {
+      "customType": "regex",
+      "description": "Track ghcr.io/graytonio/nixos-workspace:latest digest in the nix-dev Coder workspace template",
+      "fileMatch": ["^coder-templates/nix-dev/main\\.tf$"],
+      "matchStrings": [
+        "image\\s*=\\s*\"(?<depName>ghcr\\.io/graytonio/nixos-workspace):(?<currentValue>latest)@(?<currentDigest>sha256:[a-f0-9]+)\""
+      ],
+      "datasourceTemplate": "docker"
     }
   ]
 }

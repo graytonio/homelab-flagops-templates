@@ -1,0 +1,29 @@
+coder:
+  service:
+    type: ClusterIP
+
+  ingress:
+    enable: true
+    className: private-traffic
+    host: coder.[{ env "env_domain" }]
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    tls:
+      enable: false
+
+  env:
+    - name: PGUSER
+      valueFrom:
+        secretKeyRef:
+          name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+          key: username
+    - name: PGPASSWORD
+      valueFrom:
+        secretKeyRef:
+          name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+          key: password
+    - name: CODER_PG_CONNECTION_URL
+      value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
+    - name: CODER_ACCESS_URL
+      value: "https://coder.[{ env \"env_domain\" }]"

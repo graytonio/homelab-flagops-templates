@@ -40,14 +40,18 @@ locals {
 resource "coder_agent" "main" {
   os   = "linux"
   arch = "amd64"
-  dir  = "/home/coder"
 }
 
 # No `count` here -- this must persist across workspace stop/start, unlike
 # the pod below.
-resource "kubernetes_persistent_volume_claim" "home" {
+#
+# Named using the workspace's stable `id` (not `name`) so renaming the
+# workspace doesn't orphan this PVC -- Terraform would otherwise see the
+# name change as "create a new resource" and lose track of the old one
+# and its data.
+resource "kubernetes_persistent_volume_claim_v1" "home" {
   metadata {
-    name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}-home"
+    name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.id}-home"
     namespace = "coder"
   }
   spec {
@@ -64,7 +68,14 @@ resource "kubernetes_persistent_volume_claim" "home" {
 # start_count is 0 when the workspace is stopped and 1 when running -- this
 # is what makes Coder's stop/start actually delete/recreate the pod while
 # the PVC above stays put.
-resource "kubernetes_pod" "main" {
+#
+# A bare Pod (not a Deployment) is a deliberate choice: container-level
+# restart-on-crash still works via kubelet's default restartPolicy=Always,
+# and stop/start already works via the count toggle below. The trade-off is
+# no pod-level self-healing if the node itself reboots/evicts this pod --
+# acceptable for a single-user homelab where that's noticed quickly, but
+# worth knowing if this ever needs hands-off reliability.
+resource "kubernetes_pod_v1" "main" {
   count = data.coder_workspace.me.start_count
   metadata {
     name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
@@ -90,7 +101,7 @@ resource "kubernetes_pod" "main" {
     volume {
       name = "home"
       persistent_volume_claim {
-        claim_name = kubernetes_persistent_volume_claim.home.metadata[0].name
+        claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
       }
     }
   }

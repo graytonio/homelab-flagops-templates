@@ -8,6 +8,11 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     traefik.ingress.kubernetes.io/router.entrypoints: websecure
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/description: Remote development environments
+    gethomepage.dev/group: Operations
+    gethomepage.dev/icon: coder.png
+    gethomepage.dev/name: Coder
 spec:
   ingressClassName: private-traffic
   rules:

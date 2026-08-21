@@ -1,29 +1,36 @@
 coder:
-  service:
-    type: ClusterIP
+  # The upstream coder chart namespaces its own values under a top-level
+  # `coder:` key internally (its templates read .Values.coder.ingress,
+  # .Values.coder.service, etc). Since this dependency is aliased as `coder`
+  # in Chart.yaml, this outer `coder:` block becomes the subchart's root
+  # Values — so it must be nested one level deeper to actually reach the
+  # subchart's templates.
+  coder:
+    service:
+      type: ClusterIP
 
-  ingress:
-    enable: true
-    className: private-traffic
-    host: coder.[{ env "env_domain" }]
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-      traefik.ingress.kubernetes.io/router.entrypoints: websecure
-    tls:
-      enable: false
+    ingress:
+      enable: true
+      className: private-traffic
+      host: coder.[{ env "env_domain" }]
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+      tls:
+        enable: false
 
-  env:
-    - name: PGUSER
-      valueFrom:
-        secretKeyRef:
-          name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
-          key: username
-    - name: PGPASSWORD
-      valueFrom:
-        secretKeyRef:
-          name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
-          key: password
-    - name: CODER_PG_CONNECTION_URL
-      value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
-    - name: CODER_ACCESS_URL
-      value: "https://coder.[{ env \"env_domain\" }]"
+    env:
+      - name: PGUSER
+        valueFrom:
+          secretKeyRef:
+            name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+            key: username
+      - name: PGPASSWORD
+        valueFrom:
+          secretKeyRef:
+            name: coder.coder-postgresql.credentials.postgresql.acid.zalan.do
+            key: password
+      - name: CODER_PG_CONNECTION_URL
+        value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=disable"
+      - name: CODER_ACCESS_URL
+        value: "https://coder.[{ env \"env_domain\" }]"

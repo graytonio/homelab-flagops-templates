@@ -10,10 +10,54 @@ data:
 
     REPO_URL="https://github.com/graytonio/homelab-flagops-templates.git"
     STATE_CONFIGMAP="coder-template-sync-state"
+    TOKEN_SECRET="coder-template-sync-token"
     NAMESPACE="coder"
     CODER_URL="http://coder.coder.svc.cluster.local"
     export CODER_URL
     PREPULL_DAEMONSET="coder-template-image-prepull"
+    ROTATE_THRESHOLD_SECONDS=$((24 * 3600))
+    TOKEN_LIFETIME_SECONDS=$((7 * 24 * 3600))
+
+    # This secret is self-managed, not AWS/ExternalSecret-backed: Coder API
+    # tokens here are capped at a 7-day server-enforced max lifetime, and an
+    # ExternalSecret's periodic refresh from AWS would just overwrite this
+    # job's own rotated token with the stale one AWS still has -- fighting
+    # the rotation instead of supporting it. Bootstrapped once by hand
+    # (kubectl create secret with token/token_name/expires_at), then this
+    # job owns it entirely from here on.
+    CURRENT_TOKEN=$(kubectl get secret "$TOKEN_SECRET" -n "$NAMESPACE" -o jsonpath='{.data.token}' | base64 -d)
+    CURRENT_EXPIRES_AT=$(kubectl get secret "$TOKEN_SECRET" -n "$NAMESPACE" -o jsonpath='{.data.expires_at}' | base64 -d)
+
+    CODER_SESSION_TOKEN="$CURRENT_TOKEN"
+    export CODER_SESSION_TOKEN
+
+    NOW=$(date +%s)
+    if [ $((CURRENT_EXPIRES_AT - NOW)) -lt "$ROTATE_THRESHOLD_SECONDS" ]; then
+      echo "Token expires at $CURRENT_EXPIRES_AT (now $NOW), rotating"
+      NEW_TOKEN_NAME="coder-template-sync-${NOW}"
+      NEW_TOKEN=$(coder tokens create --name "$NEW_TOKEN_NAME" --lifetime 168h)
+      NEW_EXPIRES_AT=$((NOW + TOKEN_LIFETIME_SECONDS))
+
+      kubectl create secret generic "$TOKEN_SECRET" -n "$NAMESPACE" \
+        --from-literal=token="$NEW_TOKEN" \
+        --from-literal=token_name="$NEW_TOKEN_NAME" \
+        --from-literal=expires_at="$NEW_EXPIRES_AT" \
+        --dry-run=client -o yaml | kubectl apply -f -
+
+      CODER_SESSION_TOKEN="$NEW_TOKEN"
+      export CODER_SESSION_TOKEN
+
+      # Best-effort cleanup of every previously-rotated token except the one
+      # just created -- token names must be unique per user, so without this
+      # they'd accumulate in Coder's token list forever. A failure here is a
+      # tidiness issue, not a correctness one, so it must never block the
+      # rest of the run (hence `|| true` and no `set -e` interaction via the
+      # `while` loop reading from a pipe).
+      coder tokens list -c name 2>/dev/null | tail -n +2 | sed 's/[[:space:]]*$//' | grep '^coder-template-sync' | grep -vx "$NEW_TOKEN_NAME" | while read -r old_name; do
+        echo "Removing superseded token: $old_name"
+        coder tokens remove "$old_name" --delete || true
+      done
+    fi
 
     WORKDIR=$(mktemp -d)
     git clone --quiet "$REPO_URL" "$WORKDIR/repo"

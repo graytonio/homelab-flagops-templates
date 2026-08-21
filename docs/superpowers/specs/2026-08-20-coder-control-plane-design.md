@@ -106,7 +106,14 @@ coder:
       cert-manager.io/cluster-issuer: letsencrypt
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
     tls:
-      enable: false     # cert-manager/Traefik terminate TLS at the ingress, same as gotify/homepage
+      # Unlike Traefik's own charts, this chart only emits the Ingress's
+      # tls: stanza (host + secretName) when enable is true -- cert-manager's
+      # ingress-shim needs that stanza to provision a Certificate. Caught in
+      # final review: an earlier draft of this spec had this as `false`
+      # under the mistaken assumption it meant "TLS terminates elsewhere",
+      # which would have left coder.<env_domain> with no valid certificate.
+      enable: true
+      secretName: tls-coder-ingress-dns
   env:
     - name: CODER_ACCESS_URL
       value: "https://coder.[{ env \"env_domain\" }]"

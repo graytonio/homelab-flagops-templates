@@ -99,7 +99,8 @@ coder:
       cert-manager.io/cluster-issuer: letsencrypt
       traefik.ingress.kubernetes.io/router.entrypoints: websecure
     tls:
-      enable: false
+      enable: true
+      secretName: tls-coder-ingress-dns
 
   env:
     - name: PGUSER

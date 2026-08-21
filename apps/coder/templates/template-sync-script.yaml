@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: coder-template-sync-script
+  namespace: coder
+data:
+  sync.sh: |
+    #!/bin/sh
+    set -eu
+
+    REPO_URL="https://github.com/graytonio/homelab-flagops-templates.git"
+    STATE_CONFIGMAP="coder-template-sync-state"
+    NAMESPACE="coder"
+    CODER_URL="http://coder.coder.svc.cluster.local"
+    PREPULL_DAEMONSET="coder-template-image-prepull"
+
+    WORKDIR=$(mktemp -d)
+    git clone --depth 50 --quiet "$REPO_URL" "$WORKDIR/repo"
+    cd "$WORKDIR/repo"
+
+    kubectl get configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" >/dev/null 2>&1 || \
+      kubectl create configmap "$STATE_CONFIGMAP" -n "$NAMESPACE"
+
+    # Pre-pull the workspace image on every node before anyone tries to
+    # create a workspace with it. Runs unconditionally, decoupled from the
+    # per-template push loop below -- must fire even when only the image
+    # digest changed and no template text did.
+    current_image=$(grep -oE 'image\s*=\s*"[^"]+nixos-workspace[^"]+"' coder-templates/nix-dev/main.tf | sed -E 's/image\s*=\s*"([^"]+)"/\1/' | head -1)
+    last_image=$(kubectl get configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" \
+      -o jsonpath='{.data.prepulled_image}' 2>/dev/null || true)
+
+    if [ -n "$current_image" ] && [ "$current_image" != "$last_image" ]; then
+      echo "Image changed ($last_image -> $current_image), pre-pulling on all nodes"
+      cat <<EOF | kubectl apply -f -
+    apiVersion: apps/v1
+    kind: DaemonSet
+    metadata:
+      name: $PREPULL_DAEMONSET
+      namespace: $NAMESPACE
+    spec:
+      selector:
+        matchLabels:
+          app: $PREPULL_DAEMONSET
+      template:
+        metadata:
+          labels:
+            app: $PREPULL_DAEMONSET
+        spec:
+          terminationGracePeriodSeconds: 0
+          containers:
+            - name: prepull
+              image: $current_image
+              command: ["sh", "-c", "sleep 3600"]
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 16Mi
+    EOF
+      kubectl rollout status daemonset/"$PREPULL_DAEMONSET" -n "$NAMESPACE" --timeout=600s
+      kubectl delete daemonset "$PREPULL_DAEMONSET" -n "$NAMESPACE"
+
+      kubectl patch configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" --type merge \
+        -p "{\"data\":{\"prepulled_image\":\"${current_image}\"}}"
+    fi
+
+    for template_dir in coder-templates/*/; do
+      template_name=$(basename "$template_dir")
+      current_sha=$(git log -1 --format=%H -- "$template_dir")
+      last_sha=$(kubectl get configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" \
+        -o jsonpath="{.data.${template_name}}" 2>/dev/null || true)
+
+      if [ "$current_sha" = "$last_sha" ]; then
+        echo "[$template_name] unchanged since $current_sha, skipping"
+        continue
+      fi
+
+      echo "[$template_name] change detected ($last_sha -> $current_sha), pushing"
+      coder login "$CODER_URL" --token "$CODER_TOKEN"
+      coder templates push "$template_name" -d "$template_dir" --yes
+
+      kubectl patch configmap "$STATE_CONFIGMAP" -n "$NAMESPACE" --type merge \
+        -p "{\"data\":{\"${template_name}\":\"${current_sha}\"}}"
+    done

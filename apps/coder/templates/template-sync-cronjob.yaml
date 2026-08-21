@@ -17,6 +17,19 @@ rules:
     resources: ["configmaps"]
     resourceNames: ["coder-template-sync-state"]
     verbs: ["get", "patch"]
+  # Self-managed API token: this job reads/rotates its own token/token_name/
+  # expires_at directly via kubectl rather than AWS Secrets Manager +
+  # ExternalSecret (which would just get overwritten on the next external-secrets
+  # refresh, fighting the job's own rotation). "create" isn't scoped by name --
+  # the object doesn't exist yet on first bootstrap -- but get/patch only ever
+  # touch this one specific Secret.
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["coder-template-sync-token"]
+    verbs: ["get", "patch"]
   - apiGroups: ["apps"]
     resources: ["daemonsets"]
     verbs: ["get", "create", "patch", "delete", "watch"]
@@ -57,12 +70,6 @@ spec:
             - name: sync
               image: alpine/k8s:1.36.2
               command: ["/bin/sh", "/scripts/sync.sh"]
-              env:
-                - name: CODER_SESSION_TOKEN
-                  valueFrom:
-                    secretKeyRef:
-                      name: coder-template-sync-token
-                      key: token
               volumeMounts:
                 - name: script
                   mountPath: /scripts

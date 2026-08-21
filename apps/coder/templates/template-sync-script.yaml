@@ -18,6 +18,15 @@ data:
     ROTATE_THRESHOLD_SECONDS=$((24 * 3600))
     TOKEN_LIFETIME_SECONDS=$((7 * 24 * 3600))
 
+    # alpine/k8s bundles kubectl/git/curl but not the coder CLI itself --
+    # install it fresh each run (confirmed empirically: "coder: not found"
+    # on a real run without this). The pod's hostAliases entry (see
+    # template-sync-cronjob.yaml) is what lets this curl call actually
+    # resolve the hardcoded public hostname install.sh downloads from.
+    if ! command -v coder >/dev/null 2>&1; then
+      curl -fsSL "$CODER_URL/install.sh" | sh
+    fi
+
     # This secret is self-managed, not AWS/ExternalSecret-backed: Coder API
     # tokens here are capped at a 7-day server-enforced max lifetime, and an
     # ExternalSecret's periodic refresh from AWS would just overwrite this

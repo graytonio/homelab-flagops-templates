@@ -66,6 +66,17 @@ spec:
         spec:
           serviceAccountName: coder-template-sync
           restartPolicy: Never
+          # The coder CLI's own install.sh always downloads the binary from
+          # the server's configured public CODER_ACCESS_URL, regardless of
+          # which URL install.sh itself was fetched from -- confirmed
+          # empirically (fetching install.sh via the internal Service URL
+          # still produced a script with ORIGIN="https://coder.graytonward.com"
+          # baked in). Same DNS gap as the workspace agent's own bootstrap,
+          # same fix: route that hostname to Traefik's private ingress
+          # ClusterIP directly, so it resolves from inside this pod.
+          hostAliases:
+            - ip: "10.43.33.82"
+              hostnames: ["coder.graytonward.com"]
           containers:
             - name: sync
               image: alpine/k8s:1.36.2

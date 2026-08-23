@@ -52,4 +52,9 @@ coder:
             name: coder-github-external-auth
             key: client_secret
       - name: CODER_EXTERNAL_AUTH_0_REVOKE_URL
+        # This is a GitHub App (not a classic OAuth App) -- identifiable by
+        # the client ID's Iv23li prefix -- which is what makes the
+        # /applications/<client_id>/grant revoke endpoint valid here. The
+        # client ID appears twice (above and in this URL); if the GitHub App
+        # is ever recreated, both must be updated together.
         value: https://api.github.com/applications/Iv23liwNrD7odUfBMsY0/grant

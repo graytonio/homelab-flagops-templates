@@ -40,3 +40,16 @@ coder:
         value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=require"
       - name: CODER_ACCESS_URL
         value: https://coder.[{ env "env_domain" }]
+      - name: CODER_EXTERNAL_AUTH_0_ID
+        value: primary-github
+      - name: CODER_EXTERNAL_AUTH_0_TYPE
+        value: github
+      - name: CODER_EXTERNAL_AUTH_0_CLIENT_ID
+        value: Iv23liwNrD7odUfBMsY0
+      - name: CODER_EXTERNAL_AUTH_0_CLIENT_SECRET
+        valueFrom:
+          secretKeyRef:
+            name: coder-github-external-auth
+            key: client_secret
+      - name: CODER_EXTERNAL_AUTH_0_REVOKE_URL
+        value: https://api.github.com/applications/Iv23liwNrD7odUfBMsY0/grant

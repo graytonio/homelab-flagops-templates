@@ -51,14 +51,14 @@ At `github.com/settings/apps/new`:
 
 New file `apps/coder/templates/github-external-auth-secret.yaml`:
 ```yaml
-apiVersion: external-secrets.io/v1beta1
+apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: coder-github-external-auth
   namespace: coder
 spec:
   secretStoreRef:
-    name: default
+    name: aws-secret-manager
     kind: ClusterSecretStore
   target:
     creationPolicy: Owner

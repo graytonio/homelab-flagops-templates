@@ -24,6 +24,17 @@ provider "kubernetes" {
 data "coder_workspace" "me" {}
 data "coder_workspace_owner" "me" {}
 
+# optional = true: workspace creation/start never blocks on GitHub auth.
+# Once a user completes the one-time authorization (a link Coder surfaces
+# in the dashboard/CLI), the agent automatically sets up GIT_ASKPASS for
+# any github.com HTTPS remote inside the workspace -- no init scripts or
+# git config needed here. The id must match CODER_EXTERNAL_AUTH_0_ID on
+# the Coder deployment (apps/coder/values.yaml) exactly.
+data "coder_external_auth" "github" {
+  id       = "primary-github"
+  optional = true
+}
+
 locals {
   # The agent's init_script downloads the coder agent binary from a URL
   # baked in at template-push time from the server's CODER_ACCESS_URL --

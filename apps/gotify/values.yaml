@@ -10,7 +10,7 @@ gotify:
           nameOverride: gotify
           image:
             repository: gotify/server
-            tag: 3.0.0
+            tag: 3.1.0
             pullPolicy: IfNotPresent
           env:
             # PGUSER/PGPASSWORD come from the postgres-operator's

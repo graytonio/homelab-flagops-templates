@@ -212,6 +212,31 @@ resource "coder_script" "code_server" {
   EOT
 }
 
+# subdomain = false serves this path-based on the existing hostname, at
+# coder.<domain>/@<user>/<workspace>.main/apps/code-server/ -- so no
+# CODER_WILDCARD_ACCESS_URL, no wildcard Ingress, no wildcard DNS record, and
+# no wildcard certificate are needed. The trade-off is that the editor shares
+# an origin with the Coder dashboard and can therefore read the Coder session
+# cookie; acceptable for a single-user homelab running only the owner's code,
+# and the reason to revisit this if the deployment ever gains other users.
+resource "coder_app" "code_server" {
+  agent_id     = coder_agent.main.id
+  slug         = "code-server"
+  display_name = "code-server"
+  url          = "http://localhost:${local.code_server_port}/?folder=/home/coder"
+  icon         = "/icon/code.svg"
+  subdomain    = false
+  share        = "owner"
+
+  # Keeps the dashboard tile greyed out until the editor actually serves,
+  # instead of offering a link that 502s during the first-start download.
+  healthcheck {
+    url       = "http://localhost:${local.code_server_port}/healthz"
+    interval  = 5
+    threshold = 6
+  }
+}
+
 # No `count` here -- this must persist across workspace stop/start, unlike
 # the pod below.
 #

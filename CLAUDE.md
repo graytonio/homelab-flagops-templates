@@ -269,6 +269,43 @@ one version, so re-check the sync error after each apply — don't assume one
 pass covers everything. See the `renovate-pr-rollout` skill for the full
 case study (postgres-operator v1→v2).
 
+**`spec.strategy.rollingUpdate: Forbidden` after a chart adds `type: Recreate`:**
+When a chart version starts setting `spec.strategy.type: Recreate` on a
+Deployment that is live with the default `RollingUpdate`, the sync fails with:
+```
+Deployment.apps "<name>" is invalid: spec.strategy.rollingUpdate: Forbidden:
+may not be specified when strategy `type` is 'Recreate' (retried 5 times)
+```
+The chart's manifest sets `type: Recreate` but does not null out the
+`rollingUpdate` block, and ArgoCD's strategic-merge apply *retains* the block
+already on the live object — so the merged result is invalid. Nothing is
+broken: the old ReplicaSet keeps running, so this is a stuck sync, not an
+incident. Fix by patching the live object so both fields change atomically:
+```bash
+kubectl -n <ns> patch deployment <name> --type merge \
+  -p '{"spec":{"strategy":{"type":"Recreate","rollingUpdate":null}}}'
+```
+Confirm the apply now validates before re-syncing — a server-side dry run
+proves it without touching anything:
+```bash
+kubectl -n <ns> patch deployment <name> --type merge --dry-run=server \
+  -p '{"spec":{"template":{"spec":{"containers":[{"name":"<c>","image":"<new-image>"}]}}}}' \
+  -o jsonpath='{.spec.strategy}{"\n"}'
+```
+No repo change is needed — once the live object is correct, future syncs match.
+
+> **CRITICAL — ArgoCD will NOT retry on its own after this.** The operation
+> exhausts its 5 retries and stops; `selfHeal` does *not* re-attempt a failed
+> sync for the same revision. `.status.reconciledAt` keeps advancing (ArgoCD is
+> refreshing fine) while `.status.operationState.finishedAt` stays frozen at the
+> original failure — **always compare those two timestamps** before assuming a
+> fix didn't work. The `SyncError` condition also persists verbatim from the
+> pre-fix attempt, so it will keep describing a problem you already fixed.
+> A `argocd.argoproj.io/refresh=hard` annotation is **not** enough (it refreshes,
+> it does not sync). Recovery needs an explicit manual trigger (below), the
+> ArgoCD UI's Sync button, or a new commit on `main` giving the app a fresh
+> target revision.
+
 **Trigger sync without argocd CLI** (use when `argocd` binary is unavailable):
 ```bash
 kubectl patch application <app-name> -n argocd --type merge \
@@ -343,6 +380,38 @@ even though the app-side driver may retry indefinitely without a clear top-level
 (shows as a crash-looping/retrying app container, not a Postgres-side failure). Use `sslmode=require` (or omit
 `sslmode` entirely, which most drivers default to something SSL-compatible like `prefer`) in any
 `CONNECTION_URL`-style DSN pointed at a `postgresql` CRD-backed database in this cluster.
+
+**A postgres-operator image bump rolls EVERY managed Postgres cluster:**
+Bumping the operator (even a patch, e.g. v2.0.1 → v2.0.2) makes the new operator
+pod re-evaluate every `postgresql` CR it manages and perform a rolling update on
+each — it recreates the master pod of **all** clusters, in parallel, within
+seconds of starting:
+```
+performing rolling update  cluster-name=gotify/gotify-postgresql
+cannot perform switch over before re-creating the pod: no replicas
+recreating old master pod "gotify/gotify-postgresql-0"
+```
+Every cluster in this repo (`coder`, `gotify`, `pirate-ship`) runs a **single
+pod with no replicas**, so there is no failover — this is a real, simultaneous
+outage of all three databases, observed at ~88s. Dependent apps generally
+survive it (their drivers reconnect; the app pods do not restart), and PVCs are
+untouched, but plan for it:
+
+- **Never rate a postgres-operator bump "safe to merge" off a chart diff.** This
+  behavior lives in the operator's runtime, not in `values.yaml`, `templates/`,
+  or the CRDs — a clean three-way chart diff showing only image tags tells you
+  nothing about it. Treat every operator bump as the **highest** risk tier and
+  merge it off-peak.
+- Watch `kubectl get pods -A | grep postgresql` immediately after the sync
+  completes, not just the ArgoCD status — ArgoCD reports `Synced/Healthy` for
+  `db-operators-production` while the databases underneath are still
+  `ContainerCreating`.
+- Verify data continuity afterward by diffing PVC `volumeName` + creation
+  timestamp against a pre-merge baseline, **and** by querying a database
+  directly (e.g. `kubectl -n gotify exec gotify-postgresql-0 -c postgres --
+  psql -U postgres -d gotify -tAc "select count(*) from
+  information_schema.tables where table_schema='public';"`). A matching PVC name
+  alone proves nothing — see the `renovate-pr-rollout` skill's Phase 4.
 
 ### Common Chart Issues
 

@@ -157,31 +157,87 @@ resource "coder_script" "code_server" {
 
     VERSION="${local.code_server_version}"
     DIR="${local.code_server_dir}"
-    LOG="$HOME/.local/share/code-server.log"
+    # Every path below is derived from DIR, never from $HOME. The Coder agent
+    # passes this script to the login shell, and its environment is not
+    # guaranteed to carry the container's HOME (/home/coder) rather than
+    # root's passwd entry (/root). If the two ever disagreed, the prune below
+    # would run against a nonexistent directory, fail under set -e, and stop
+    # the editor from ever starting -- with nothing in the log but a find error.
+    LIB_DIR="$(dirname "$DIR")"
+    LOG_DIR="$(dirname "$LIB_DIR")/share"
+    LOG="$LOG_DIR/code-server.log"
+
+    # Unconditional, and before the prune: the prune must never be the thing
+    # that depends on the install branch having created these first.
+    mkdir -p "$LIB_DIR" "$LOG_DIR"
+
+    log() { echo "$*" | tee -a "$LOG"; }
 
     if [ ! -f "$DIR/out/node/entry.js" ]; then
-      echo "Installing code-server $VERSION into $DIR"
-      mkdir -p "$DIR"
+      log "Installing code-server $VERSION into $DIR"
+      # Extract to a sibling and rename, so out/node/entry.js -- the
+      # idempotency sentinel checked above -- can only appear on a complete
+      # tree. It is member 6544 of 6584 in the tarball, so a download
+      # truncated in the last ~40 members would otherwise leave the sentinel
+      # present with its required modules missing, and every later start would
+      # report "already installed" while code-server died on MODULE_NOT_FOUND.
+      TMP="$DIR.partial"
+      rm -rf "$TMP"
+      mkdir -p "$TMP"
       curl -fsSL "https://github.com/coder/code-server/releases/download/v$VERSION/code-server-$VERSION-linux-amd64.tar.gz" \
-        | tar -xz -C "$DIR" --strip-components=1
+        | tar -xz -C "$TMP" --strip-components=1
+      rm -rf "$DIR"
+      mv "$TMP" "$DIR"
     else
-      echo "code-server $VERSION already installed at $DIR"
+      log "code-server $VERSION already installed at $DIR"
     fi
 
-    # Reclaim PVC space from any previously pinned version.
-    find "$HOME/.local/lib" -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
+    # Reclaim PVC space from any previously pinned version. -mindepth 1 keeps
+    # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
+    find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
 
-    mkdir -p "$(dirname "$LOG")"
+    # After the install/prune, so bumping local.code_server_version still takes
+    # effect: this only guards against a second instance losing the port race.
+    if curl -fsS "http://127.0.0.1:${local.code_server_port}/healthz" >/dev/null 2>&1; then
+      log "code-server already listening on ${local.code_server_port}; not starting a second instance"
+      exit 0
+    fi
+
+    # No nohup/disown needed: the agent runs scripts without a controlling
+    # terminal, so nothing sends SIGHUP when this script exits. Appending
+    # rather than truncating keeps the previous boot's crash output, which is
+    # the only debug surface this feature has.
     node "$DIR/out/node/entry.js" \
       --auth none \
       --bind-addr "127.0.0.1:${local.code_server_port}" \
       --disable-telemetry \
-      > "$LOG" 2>&1 &
+      >> "$LOG" 2>&1 &
+    PID=$!
 
-    echo "code-server started on 127.0.0.1:${local.code_server_port}, logging to $LOG"
+    # set -e cannot observe a backgrounded process, so without this check the
+    # script reports success even when node exits instantly (bad flag, missing
+    # module, port already bound) and only the coder_app healthcheck notices,
+    # ~30s later, while this log claims it started.
+    sleep 2
+    if ! kill -0 "$PID" 2>/dev/null; then
+      log "code-server exited immediately; last log lines:"
+      tail -20 "$LOG"
+      exit 1
+    fi
+
+    log "code-server started on 127.0.0.1:${local.code_server_port} (pid $PID), logging to $LOG"
   EOT
 }
 ```
+
+> **Revised after code review.** The first draft of this script derived `LOG` and the prune path from
+> `$HOME` while `DIR` came from Terraform, extracted the tarball directly into `$DIR`, and echoed
+> success unconditionally. Review found three failure modes that only surface in production: a
+> `HOME` mismatch would kill the script at the prune under `set -e` and silently prevent the editor
+> from ever starting; a download truncated in the tarball's last ~40 members would leave the
+> idempotency sentinel present with its dependencies missing and never self-heal; and a backgrounded
+> process that died instantly would still be reported as started. `tee`, `dirname`, `sleep`, and
+> `tail` were confirmed present in the workspace image before adopting this version.
 
 Three details that matter and are easy to get wrong:
 
@@ -532,6 +588,8 @@ kubectl -n coder exec coder-graytonio-ward-homelab-management -- \
 ```
 
 Expected: at least `1`. This proves the idempotency check works and the ~235MB download does not repeat on every start — the main efficiency claim of the design.
+
+This check only works because the script's `log()` helper tees its own messages into `$LOG`. In the pre-review draft those messages went to the agent's script log instead, and this grep would have returned `0` against a perfectly working install. If it does return `0`, confirm `log()` is still teeing before concluding anything is broken.
 
 - [ ] **Step 8: Report results**
 

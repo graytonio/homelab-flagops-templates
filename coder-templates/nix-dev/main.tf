@@ -76,11 +76,72 @@ locals {
   # the agent (and everything it spawns: terminal sessions, SSH sessions) inherits a
   # correctly-configured environment regardless of which image build is running.
   agent_start_script = "[ -f $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh ] && . $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh; ${coder_agent.main.init_script}"
+
+  # Pinned deliberately rather than resolved from the GitHub API at install
+  # time, matching how the workspace image below is pinned by digest: an
+  # upgrade should be a reviewable one-line commit, and two workspaces
+  # created months apart should get the same editor.
+  code_server_version = "4.135.0"
+  code_server_port    = 13337
+  # Under $HOME, so this lands on the Longhorn PVC and the ~235MB download
+  # happens on first start only. Version-suffixed so a version bump installs
+  # cleanly alongside rather than half-overwriting the old tree.
+  code_server_dir = "/home/coder/.local/lib/code-server-${local.code_server_version}"
 }
 
 resource "coder_agent" "main" {
   os   = "linux"
   arch = "amd64"
+}
+
+# Installs (once) and starts code-server. The workspace image is a pure
+# NixOS container: there is no /lib64/ld-linux-x86-64.so.2 and nix-ld is not
+# configured, so the glibc-linked `node` bundled inside code-server's release
+# tarball cannot exec at all -- confirmed empirically in a live workspace:
+#
+#   ./lib/node --version              -> "cannot execute: required file not found" (127)
+#   node out/node/entry.js --version  -> "4.135.0 ... with Code 1.135.0"           (0)
+#
+# So this must invoke `out/node/entry.js` with the image's Nix-provided node
+# and must never call `bin/code-server`, whose wrapper execs the bundled
+# binary. This is also why Coder's official registry code-server module is
+# unusable here -- it launches through that same wrapper and exposes no hook
+# to override the node binary.
+resource "coder_script" "code_server" {
+  agent_id     = coder_agent.main.id
+  display_name = "code-server"
+  icon         = "/icon/code.svg"
+  run_on_start = true
+
+  script = <<-EOT
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    VERSION="${local.code_server_version}"
+    DIR="${local.code_server_dir}"
+    LOG="$HOME/.local/share/code-server.log"
+
+    if [ ! -f "$DIR/out/node/entry.js" ]; then
+      echo "Installing code-server $VERSION into $DIR"
+      mkdir -p "$DIR"
+      curl -fsSL "https://github.com/coder/code-server/releases/download/v$VERSION/code-server-$VERSION-linux-amd64.tar.gz" \
+        | tar -xz -C "$DIR" --strip-components=1
+    else
+      echo "code-server $VERSION already installed at $DIR"
+    fi
+
+    # Reclaim PVC space from any previously pinned version.
+    find "$HOME/.local/lib" -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
+
+    mkdir -p "$(dirname "$LOG")"
+    node "$DIR/out/node/entry.js" \
+      --auth none \
+      --bind-addr "127.0.0.1:${local.code_server_port}" \
+      --disable-telemetry \
+      > "$LOG" 2>&1 &
+
+    echo "code-server started on 127.0.0.1:${local.code_server_port}, logging to $LOG"
+  EOT
 }
 
 # No `count` here -- this must persist across workspace stop/start, unlike

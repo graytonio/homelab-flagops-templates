@@ -140,7 +140,19 @@ resource "coder_script" "code_server" {
     # that depends on the install branch having created these first.
     mkdir -p "$LIB_DIR" "$LOG_DIR"
 
-    log() { echo "$*" | tee -a "$LOG"; }
+    # The log is appended to (never truncated) on every start and lives on the
+    # PVC, so bound it or it grows for the life of the workspace.
+    [ -f "$LOG" ] && [ "$(stat -c %s "$LOG")" -gt 10485760 ] && mv "$LOG" "$LOG.1" || true
+
+    # The `|| true` keeps a failing tee (unwritable $LOG_DIR, full volume) from
+    # aborting the script here, since this is a pipeline and pipefail is set.
+    # It does NOT make the editor survive a broken log destination -- node's
+    # own `>> "$LOG"` redirect below needs the same file, so the launch fails
+    # and the liveness check reports it (verified: an unwritable log yields
+    # "code-server exited immediately", exit 1). The guard just ensures that
+    # failure is diagnosed at the launch, rather than aborting silently at the
+    # first log line before any work has been done.
+    log() { echo "$*" | tee -a "$LOG" || true; }
 
     if [ ! -f "$DIR/out/node/entry.js" ]; then
       log "Installing code-server $VERSION into $DIR"
@@ -166,7 +178,9 @@ resource "coder_script" "code_server" {
     find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
 
     # After the install/prune, so bumping local.code_server_version still takes
-    # effect: this only guards against a second instance losing the port race.
+    # effect on disk; the running process is only replaced when the pod is,
+    # which is what `coder update` does. This only guards against a second
+    # instance losing the port race.
     if curl -fsS "http://127.0.0.1:${local.code_server_port}/healthz" >/dev/null 2>&1; then
       log "code-server already listening on ${local.code_server_port}; not starting a second instance"
       exit 0

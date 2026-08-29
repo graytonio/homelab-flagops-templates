@@ -81,6 +81,16 @@ locals {
   # time, matching how the workspace image below is pinned by digest: an
   # upgrade should be a reviewable one-line commit, and two workspaces
   # created months apart should get the same editor.
+  #
+  # Bumping this has a coupling that is easy to miss: the release tarball ships
+  # prebuilt native modules (node-pty and friends) built against the Node major
+  # in its .node-version, and we run them under the image's Nix node rather
+  # than the tarball's bundled one. 4.135.0 wants 24.18.1 and the image ships
+  # 24.19.0 -- same major, same NODE_MODULE_VERSION, so they load. If either
+  # side crosses a major (this pin, or nodejs in the nixos-config flake), those
+  # modules fail to load at runtime in the integrated terminal and extension
+  # host, while the startup liveness check and /healthz both still pass. Check
+  # `node --version` in the workspace against the release's .node-version.
   code_server_version = "4.135.0"
   code_server_port    = 13337
   # Under $HOME, so this lands on the Longhorn PVC and the ~235MB download
@@ -173,26 +183,37 @@ resource "coder_script" "code_server" {
       log "code-server $VERSION already installed at $DIR"
     fi
 
-    # Reclaim PVC space from any previously pinned version. -mindepth 1 keeps
-    # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
-    find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
-
-    # After the install/prune, so bumping local.code_server_version still takes
-    # effect on disk; the running process is only replaced when the pod is,
-    # which is what `coder update` does. This only guards against a second
-    # instance losing the port race.
+    # After the install, so bumping local.code_server_version still lands the
+    # new tree on disk, but BEFORE the prune below: this guard exists precisely
+    # because the script can re-run while an instance is live, and in that
+    # situation pruning would delete the directory the running process was
+    # launched from, breaking its lazy require()s and extension-host spawns
+    # until the pod restarts.
     if curl -fsS "http://127.0.0.1:${local.code_server_port}/healthz" >/dev/null 2>&1; then
       log "code-server already listening on ${local.code_server_port}; not starting a second instance"
       exit 0
     fi
 
+    # Reclaim PVC space from any previously pinned version. -mindepth 1 keeps
+    # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
+    find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
+
     # No nohup/disown needed: the agent runs scripts without a controlling
     # terminal, so nothing sends SIGHUP when this script exits. Appending
     # rather than truncating keeps the previous boot's crash output, which is
     # the only debug surface this feature has.
+    # --user-data-dir/--extensions-dir are passed explicitly even though these
+    # are exactly code-server's defaults today. Everything above deliberately
+    # avoids trusting $HOME, but code-server resolves both of these from
+    # $XDG_DATA_HOME/$HOME internally -- so in the very scenario that hardening
+    # defends against, the script would run fine and log to the PVC while every
+    # setting and installed extension landed on ephemeral container storage and
+    # vanished on the next restart. Quieter failure than the one it replaced.
     node "$DIR/out/node/entry.js" \
       --auth none \
       --bind-addr "127.0.0.1:${local.code_server_port}" \
+      --user-data-dir "$LOG_DIR/code-server" \
+      --extensions-dir "$LOG_DIR/code-server/extensions" \
       --disable-telemetry \
       >> "$LOG" 2>&1 &
     PID=$!
@@ -227,9 +248,16 @@ resource "coder_app" "code_server" {
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"
+  # The provider default is "slim-window", a chrome-less popup that browsers'
+  # popup blockers sometimes eat on first click -- and a full IDE wants the
+  # room anyway.
+  open_in = "tab"
 
-  # Keeps the dashboard tile greyed out until the editor actually serves,
-  # instead of offering a link that 502s during the first-start download.
+  # Holds the dashboard tile in an unhealthy state until the editor actually
+  # serves, instead of offering a link that 502s. Note the grace period here is
+  # 30s (interval x threshold) while a first-ever start spends minutes
+  # downloading ~235MB, so expect a multi-minute unhealthy window exactly once
+  # per workspace; it flips healthy on its own once /healthz answers.
   healthcheck {
     url       = "http://localhost:${local.code_server_port}/healthz"
     interval  = 5

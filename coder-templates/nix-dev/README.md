@@ -7,18 +7,39 @@ Longhorn-backed PersistentVolumeClaim mounted at `/home/coder` that survives
 workspace stop/start.
 
 This directory is **not** ArgoCD-managed — Coder has no GitOps-native way to
-sync templates from git without enterprise features, so pushing it is a
-manual step.
+sync templates from git without enterprise features.
 
-## Push this template
+## How this template reaches the Coder server
+
+Automatically. The `coder-template-sync` CronJob (`apps/coder/templates/`)
+runs every 15 minutes, clones `main`, and runs `coder templates push` for
+every `coder-templates/*/` whose git SHA changed since its last run. It also
+pre-pulls the workspace image on every node via a DaemonSet when the pinned
+image digest in `main.tf` changes, so a fresh digest doesn't leave the first
+workspace creation waiting on a cold multi-minute pull.
+
+So: commit to `main` and the template lands within 15 minutes. Nothing here
+needs a manual push.
+
+To skip the wait, run the job immediately:
+
+```bash
+J=coder-template-sync-manual-$(date +%s)
+kubectl -n coder create job --from=cronjob/coder-template-sync "$J"
+kubectl -n coder wait --for=condition=complete --timeout=600s job/"$J"
+kubectl -n coder logs job/"$J"
+```
+
+Pushing by hand is only needed if the CronJob is broken or you want to test
+an uncommitted change:
 
 ```bash
 coder login https://coder.graytonward.com
 coder templates push nix-dev -d coder-templates/nix-dev/
 ```
 
-Re-run `coder templates push` whenever this directory or the
-`nixos-workspace` image tag changes.
+Note that pushing a new template version does **not** update running
+workspaces — that needs `coder update <workspace>`, which recreates the pod.
 
 ## Prerequisites
 
@@ -37,16 +58,30 @@ served path-based at
 hostname, so no wildcard DNS, Ingress, or TLS certificate is involved.
 
 The version is pinned in `main.tf` (`local.code_server_version`). To
-upgrade, bump that value and commit — the `coder-template-sync` CronJob
-pushes the new template version within 15 minutes, and the next workspace
-start installs it and deletes the old install directory. The bump takes
-effect on disk immediately, but the running editor is only replaced when
-the pod is, which is what `coder update` does.
+upgrade, bump that value and commit — the sync CronJob pushes the new
+template version, and nothing changes until the workspace restarts, which
+`coder update` does. The next start installs the new version and deletes
+the old install directory.
 
-On first start the workspace downloads ~235MB and the app tile is briefly
-unhealthy; the install lands in `~/.local/lib/code-server-<version>` on the
-PVC, so later starts are immediate. Runtime log:
-`~/.local/share/code-server.log`, rotated to `.log.1` past 10MB.
+When bumping, keep the workspace image's `node --version` major aligned
+with the code-server release's `.node-version`. The tarball's prebuilt
+native modules run under the image's Nix node, and a major mismatch breaks
+them at runtime in the integrated terminal and extension host while the
+startup check and `/healthz` both still pass.
+
+A first-ever start downloads ~235MB, during which the app tile sits
+unhealthy for several minutes (the healthcheck's grace period is only 30s)
+before flipping healthy on its own. The install lands in
+`~/.local/lib/code-server-<version>` on the PVC, so later starts are
+immediate.
+
+Two logs, and they hold different things. `~/.local/share/code-server.log`
+(rotated to `.log.1` past 10MB) has the editor's runtime output plus the
+script's own progress messages. Failures in the install itself — a `curl`
+or `tar` error under `set -o pipefail` — go to the Coder agent's script log
+instead, visible in the dashboard's workspace build log. If the install
+directory is missing and `code-server.log` ends at
+`Installing code-server ...`, look there.
 
 > **Do not switch this to Coder's official code-server registry module, and
 > do not launch `bin/code-server`.** This image is a pure NixOS container:
@@ -69,6 +104,7 @@ not gitignored and would be uploaded verbatim by `coder templates push`.
 Validate against a copy outside the repo instead:
 
 ```bash
-d=$(mktemp -d) && cp coder-templates/nix-dev/main.tf "$d/"
+repo=$(git rev-parse --show-toplevel)
+d=$(mktemp -d) && cp "$repo/coder-templates/nix-dev/main.tf" "$d/"
 (cd "$d" && terraform init -input=false >/dev/null && terraform validate)
 ```

@@ -485,20 +485,30 @@ Expected: fast-forward merge listing the three feature commits plus the earlier 
 
 The `coder-template-sync` CronJob clones this repo's `main` branch, so the change is inert until it is pushed.
 
-- [ ] **Step 3: Trigger the template sync immediately instead of waiting up to 15 minutes**
+- [ ] **Step 3: Trigger the template sync immediately instead of waiting up to 15 minutes, and wait for it**
 
 ```bash
-kubectl -n coder create job --from=cronjob/coder-template-sync coder-template-sync-manual-$(date +%s)
-kubectl -n coder get jobs -l job-name --sort-by=.metadata.creationTimestamp | tail -3
+J=coder-template-sync-manual-$(date +%s)
+kubectl -n coder create job --from=cronjob/coder-template-sync "$J"
+kubectl -n coder wait --for=condition=complete --timeout=600s job/"$J"
+echo "$J"
 ```
+
+Record the job name — Step 4 needs it.
+
+The `wait` is not optional. The sync pod installs the `coder` CLI via `curl | sh` and does a full `git clone` before it reaches the template loop, so without waiting the next step reads logs from a pod that is still `ContainerCreating`.
 
 - [ ] **Step 4: Confirm the push succeeded**
 
 ```bash
-kubectl -n coder logs -l job-name --tail=50 --prefix | grep -A2 'nix-dev'
+kubectl -n coder logs job/"$J" | grep -A2 'nix-dev'
 ```
 
-Expected: a line reading `[nix-dev] change detected (<old-sha> -> <new-sha>), pushing` and no error after it. If it instead says `unchanged`, the commit did not reach `main` on the remote — recheck Step 2.
+Expected: exactly one line reading `[nix-dev] change detected (<old-sha> -> <new-sha>), pushing`, with the new SHA matching the merge commit, and no error after it.
+
+**Do not use `kubectl logs -l job-name`.** That is a label-*existence* selector: it matches every retained sync pod (`successfulJobsHistoryLimit: 3` plus failed ones), so it returns a mix of stale `[nix-dev] unchanged since <old-sha>, skipping` lines from previous runs. Reading those would say the merge did not land when it did. Always scope to the specific job created in Step 3.
+
+If the correctly-scoped log genuinely says `unchanged`, the commit did not reach `main` on the remote — recheck Step 2.
 
 - [ ] **Step 5: Update the existing workspace to the new template version**
 
@@ -533,7 +543,9 @@ kubectl -n coder exec coder-graytonio-ward-homelab-management -- sh -c \
   'ls -d ~/.local/lib/code-server-*; tail -20 ~/.local/share/code-server.log'
 ```
 
-Expected: a single directory `code-server-4.135.0`, and a log containing `HTTP server listening on http://127.0.0.1:13337/`. There must be **no** `cannot execute: required file not found` — that string would mean the bundled node is being launched and Task 1's core requirement was not met.
+Expected: a single directory `code-server-4.135.0`, and a log containing `HTTP server listening on http://127.0.0.1:13337/` (confirmed to be the literal startup string emitted by code-server 4.135.0).
+
+That listening line is the real evidence — do not substitute a check for the absence of `cannot execute: required file not found`. The script never invokes `lib/node` or `bin/code-server`, so that string cannot appear by construction and a grep for it would pass no matter what.
 
 - [ ] **Step 2: Confirm the editor answers on its health endpoint**
 
@@ -554,7 +566,9 @@ Expected: the home PVC's `volumeName` and creation timestamp match the baseline 
 
 - [ ] **Step 4: Confirm the app tile is healthy in Coder**
 
-Open the workspace page at `https://coder.graytonward.com`. Expected: a `code-server` tile with the VS Code icon, not greyed out.
+Open the workspace page at `https://coder.graytonward.com`. Expected: a `code-server` tile with the VS Code icon, reporting **healthy** (judge by the reported health status, not by tile colour).
+
+Steps 1-2 already proved the editor is serving, so a tile that still reads unhealthy here means the healthcheck path is wrong, not that code-server is down. On a first-ever start the tile legitimately sits unhealthy for the several minutes the 235MB download takes — its grace period is only 30s — so let the install finish before judging.
 
 - [ ] **Step 5: Open the editor in a browser — the real test**
 
@@ -570,15 +584,20 @@ In the editor's terminal, run:
 
 ```bash
 which node go kubectl fish
+node --version
 ```
 
 Expected: all four resolve under `/home/coder/.nix-profile/bin` or `/root/.nix-profile/bin`.
+
+`node --version` is not incidental: the code-server tarball's prebuilt native modules (node-pty and friends) run under this node, and they only load if its major matches the release's `.node-version` (24.18.1 for 4.135.0). A working integrated terminal here *is* the evidence that node-pty loaded — the startup check and `/healthz` would both pass even if it hadn't.
 
 - [ ] **Step 7: Confirm the install persists across a restart**
 
 ```bash
 coder stop homelab-management && coder start homelab-management
 ```
+
+If the `coder` CLI is not authenticated locally, use the dashboard's Stop then Start buttons on the workspace page instead — same as Task 4, Step 5.
 
 Then:
 

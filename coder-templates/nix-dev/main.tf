@@ -75,7 +75,34 @@ locals {
   # the script dynamically here instead, right before starting the Coder agent, so
   # the agent (and everything it spawns: terminal sessions, SSH sessions) inherits a
   # correctly-configured environment regardless of which image build is running.
-  agent_start_script = "[ -f $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh ] && . $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh; ${coder_agent.main.init_script}"
+  #
+  # Home-manager's activation runs first, and has to. The home directory below
+  # is a PVC seeded from the image exactly once and never re-seeded, so the
+  # home-manager dotfile symlinks it captured freeze pointing at whichever
+  # home-manager-files store path the seeding image had. Every later image
+  # digest bump changes that hash and leaves them dangling -- fish, starship,
+  # tmux and nvim silently lose their config while still starting normally, so
+  # the shell looks fine and simply behaves like a stock one. Confirmed
+  # empirically: ~/.config/fish/config.fish pointed at a store path absent from
+  # the running image. Re-activating re-points every link at the current image
+  # (~500ms, idempotent, leaves PATH and ~/.nix-profile alone).
+  #
+  # /hm-activation is a stable out-link created by coder/Dockerfile in
+  # nixos-config. The glob is a fallback for images built before that existed;
+  # it works because those images carry exactly one generation, but it would
+  # pick arbitrarily if one ever carried more, which is why the out-link is the
+  # preferred path rather than the only one.
+  #
+  # `|| true` is load-bearing: activation must never abort this chain. If it
+  # fails the agent still has to come up, otherwise the workspace is
+  # unreachable and the failure cannot be diagnosed from inside it.
+  agent_start_script = <<-EOT
+    ACT=/hm-activation
+    [ -x "$ACT/activate" ] || ACT=$(ls -d /nix/store/*-home-manager-generation 2>/dev/null | head -1)
+    [ -x "$ACT/activate" ] && "$ACT/activate" || true
+    [ -f $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh ] && . $HOME/.nix-profile/etc/profile.d/hm-session-vars.sh
+    ${coder_agent.main.init_script}
+  EOT
 
   # Pinned deliberately rather than resolved from the GitHub API at install
   # time, matching how the workspace image below is pinned by digest: an
@@ -325,7 +352,7 @@ resource "kubernetes_pod_v1" "main" {
     # `home-manager switch` inside it).
     init_container {
       name    = "seed-home"
-      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:2978316785a1282c7a915ba32b32a85e13d3e92976d537ee41e5ec66277d976e"
+      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
       command = ["sh", "-c", "if [ ! -e /mnt/persistent-home/.nix-profile ]; then cp -a /home/coder/. /mnt/persistent-home/; fi"]
 
       volume_mount {
@@ -336,7 +363,7 @@ resource "kubernetes_pod_v1" "main" {
 
     container {
       name    = "dev"
-      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:2978316785a1282c7a915ba32b32a85e13d3e92976d537ee41e5ec66277d976e"
+      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
       command = ["sh", "-c", local.agent_start_script]
 
       env {

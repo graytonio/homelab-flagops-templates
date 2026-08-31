@@ -225,6 +225,52 @@ resource "coder_script" "code_server" {
     # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
     find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
 
+    # Editor defaults, seeded once. Deliberately only written when absent: this
+    # file is what the settings UI writes to, so owning it on every start would
+    # silently revert anything changed in the editor -- the same surprise the
+    # home-manager dotfile activation above legitimately causes for dotfiles,
+    # but wrong for this file. Consequence to know: changing these defaults
+    # later will not reach a workspace that already has the file; delete it and
+    # restart to pick them up.
+    USER_DIR="$LOG_DIR/code-server/User"
+    if [ ! -f "$USER_DIR/settings.json" ]; then
+      mkdir -p "$USER_DIR"
+      # Both identifiers verified against the extensions' package.json on Open
+      # VSX. They are not the same form and are easy to get wrong: the colour
+      # theme is matched by its *label* ("Catppuccin Mocha"), the icon theme by
+      # its *id* ("catppuccin-mocha"). A wrong value fails silently -- the
+      # editor just falls back to the default theme with no error anywhere.
+      printf '%s\n' \
+        '{' \
+        '  "workbench.colorTheme": "Catppuccin Mocha",' \
+        '  "workbench.iconTheme": "catppuccin-mocha",' \
+        '  "telemetry.telemetryLevel": "off"' \
+        '}' > "$USER_DIR/settings.json"
+      log "seeded code-server settings.json"
+    fi
+
+    # Catppuccin Mocha to match nvim, tmux and kitty in the nixos-config flake.
+    # Fetched from Open VSX -- code-server cannot use the Microsoft marketplace,
+    # so a Microsoft-only extension id would simply never resolve here.
+    #
+    # Per-extension seed check, and never fatal: an Open VSX outage or a network
+    # blip must not stop the editor from starting. It just starts unthemed, logs
+    # a warning, and picks the extension up on the next restart.
+    EXT_DIR="$LOG_DIR/code-server/extensions"
+    for ext in Catppuccin.catppuccin-vsc Catppuccin.catppuccin-vsc-icons; do
+      # Installed extensions land in a lowercased <publisher>.<name>-<version>
+      # directory, so the check has to lowercase the id to match.
+      lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
+      if ! ls -d "$EXT_DIR/$lower-"* >/dev/null 2>&1; then
+        log "installing $ext from Open VSX"
+        node "$DIR/out/node/entry.js" \
+          --user-data-dir "$LOG_DIR/code-server" \
+          --extensions-dir "$EXT_DIR" \
+          --install-extension "$ext" >> "$LOG" 2>&1 \
+          || log "WARNING: could not install $ext; the editor will start without it"
+      fi
+    done
+
     # No nohup/disown needed: the agent runs scripts without a controlling
     # terminal, so nothing sends SIGHUP when this script exits. Appending
     # rather than truncating keeps the previous boot's crash output, which is

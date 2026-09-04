@@ -49,6 +49,54 @@ creating a workspace from this template — see the `nixos-config` repo's
 without the image existing will succeed, but the first workspace creation
 will fail with `ImagePullBackOff`.
 
+## Cloning a repo into the workspace
+
+Workspace creation offers an optional **Git repository** field. Set it and
+the repo is cloned to `~/repos/<name>` on the next start, and the browser
+editor opens that directory instead of the home directory. Leave it empty
+and nothing changes.
+
+The parameter is mutable, so an existing workspace can gain or change a repo
+without being recreated:
+
+```bash
+coder update homelab-management --parameter repo_url=https://github.com/graytonio/nixos-config
+```
+
+Both `https://` and `git@` forms work, with or without a trailing `.git`.
+Private GitHub repos over HTTPS need no extra setup — the agent configures
+`GIT_ASKPASS` from the `primary-github` external auth once that one-time
+authorization is granted.
+
+Two behaviours worth knowing:
+
+- **The clone only happens when the target directory is absent.** It is
+  genuinely first-start-only and will never overwrite an existing clone, so
+  changing the parameter clones the new repo and leaves the old one on disk.
+- **A failed clone never blocks startup.** A bad URL, an unauthorized private
+  repo, or a network blip logs a warning to
+  `~/.local/share/code-server.log` and the workspace starts without it.
+
+## Workspace pods are a Deployment
+
+The workspace runs as a Deployment with `replicas` toggled between 0 and 1 by
+Coder's stop/start, not as a bare Pod. A bare Pod had no self-healing: when a
+node rebooted or evicted it, nothing recreated it and Coder still reported the
+workspace as `Started`.
+
+The strategy is `Recreate` and must stay that way. The home volume is a
+ReadWriteOnce Longhorn PVC, so two pods can never mount it simultaneously — a
+rolling update would deadlock with the new pod stuck `ContainerCreating` on a
+volume the old one still holds.
+
+Consequence for anything scripted: pod names are generated
+(`coder-<owner>-<workspace>-<hash>`), not fixed. Select by label instead:
+
+```bash
+kubectl -n coder get pods -l coder.workspace=homelab-management
+kubectl -n coder logs -l coder.workspace=homelab-management -c dev
+```
+
 ## Browser editor (code-server)
 
 Workspaces expose code-server as a Coder app, in addition to the web

@@ -35,6 +35,34 @@ data "coder_external_auth" "github" {
   optional = true
 }
 
+# Optional. Empty means "no repo" and every piece below no-ops, so a workspace
+# created without it behaves exactly as before.
+#
+# mutable = true so an existing workspace can gain or change a repo via `coder
+# update` rather than having to be recreated -- which matters because the
+# workspaces that exist today predate this parameter. The clone itself only
+# happens on a start where the target directory is absent, so changing this
+# takes effect on the next start, and pointing it somewhere new never touches
+# the previous clone.
+#
+# The regex rejects anything that is not an https:// or git@ URL. That is
+# mostly a typo guard, but it also keeps shell metacharacters out of a value
+# that gets interpolated into the startup script below.
+data "coder_parameter" "repo_url" {
+  name         = "repo_url"
+  display_name = "Git repository"
+  description  = "Optional. Cloned to ~/repos/<name> on first start, and the browser editor opens it instead of the home directory. Leave empty for none."
+  type         = "string"
+  default      = ""
+  mutable      = true
+  icon         = "/icon/git.svg"
+
+  validation {
+    regex = "^$|^(https://|git@)\\S+$"
+    error = "Must be empty, or an https:// or git@ URL."
+  }
+}
+
 locals {
   # The agent's init_script downloads the coder agent binary from a URL
   # baked in at template-push time from the server's CODER_ACCESS_URL --
@@ -124,6 +152,20 @@ locals {
   # happens on first start only. Version-suffixed so a version bump installs
   # cleanly alongside rather than half-overwriting the old tree.
   code_server_dir = "/home/coder/.local/lib/code-server-${local.code_server_version}"
+
+  # basename handles both URL shapes without special-casing: it splits on "/",
+  # so https://host/org/repo and git@host:org/repo.git both reduce to the repo
+  # segment, and trimsuffix drops the .git. Trailing slashes are handled too
+  # (basename follows filepath.Base semantics).
+  repo_url  = trimspace(data.coder_parameter.repo_url.value)
+  repo_name = local.repo_url == "" ? "" : trimsuffix(basename(local.repo_url), ".git")
+  repo_dir  = local.repo_url == "" ? "" : "/home/coder/repos/${local.repo_name}"
+
+  # What the browser editor opens. Resolved here rather than in the script
+  # because coder_app.url is a Terraform value, not something the workspace can
+  # decide at runtime -- which is fine, since the parameter is known at apply
+  # time. Falls back to the home directory when no repo is configured.
+  code_server_folder = local.repo_dir == "" ? "/home/coder" : local.repo_dir
 }
 
 resource "coder_agent" "main" {
@@ -225,6 +267,28 @@ resource "coder_script" "code_server" {
     # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
     find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
 
+    # Clone the workspace's repo, if one is configured and not already present.
+    # Absent-directory check rather than a marker file, so this is genuinely
+    # first-start-only and can never clobber work in an existing clone -- if the
+    # directory is there, for any reason, this leaves it alone.
+    #
+    # Single-quoted because the value comes from a workspace parameter: with
+    # double quotes a URL containing $(...) or backticks would execute here. The
+    # parameter's validation regex is the first line of defence; this is the
+    # second.
+    #
+    # Never fatal. A bad URL, a private repo the GitHub authorization has not
+    # been granted for, or a network blip must not stop the workspace coming up
+    # -- it just starts without the clone and says so in the log.
+    REPO_URL='${local.repo_url}'
+    REPO_DIR='${local.repo_dir}'
+    if [ -n "$REPO_URL" ] && [ ! -d "$REPO_DIR" ]; then
+      log "cloning $REPO_URL into $REPO_DIR"
+      mkdir -p "$(dirname "$REPO_DIR")"
+      git clone "$REPO_URL" "$REPO_DIR" >> "$LOG" 2>&1 \
+        || log "WARNING: could not clone $REPO_URL; the workspace will start without it"
+    fi
+
     # Editor defaults, seeded once. Deliberately only written when absent: this
     # file is what the settings UI writes to, so owning it on every start would
     # silently revert anything changed in the editor -- the same surprise the
@@ -317,7 +381,7 @@ resource "coder_app" "code_server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
   display_name = "code-server"
-  url          = "http://localhost:${local.code_server_port}/?folder=/home/coder"
+  url          = "http://localhost:${local.code_server_port}/?folder=${local.code_server_folder}"
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"
@@ -361,87 +425,119 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   }
 }
 
-# start_count is 0 when the workspace is stopped and 1 when running -- this
-# is what makes Coder's stop/start actually delete/recreate the pod while
-# the PVC above stays put.
+# replicas is 0 when the workspace is stopped and 1 when running -- this is
+# what makes Coder's stop/start work, with the PVC above staying put.
 #
-# A bare Pod (not a Deployment) is a deliberate choice: container-level
-# restart-on-crash still works via kubelet's default restartPolicy=Always,
-# and stop/start already works via the count toggle below. The trade-off is
-# no pod-level self-healing if the node itself reboots/evicts this pod --
-# acceptable for a single-user homelab where that's noticed quickly, but
-# worth knowing if this ever needs hands-off reliability.
-resource "kubernetes_pod_v1" "main" {
-  count = data.coder_workspace.me.start_count
+# A Deployment, not a bare Pod. The original bare Pod was a deliberate
+# simplification whose stated trade-off was "no pod-level self-healing if the
+# node itself reboots/evicts this pod" -- and that trade-off came due: the
+# workspace pod vanished with nothing to recreate it, while Coder still
+# reported the workspace as Started. A Deployment's ReplicaSet reschedules it.
+#
+# strategy must be Recreate, not the default RollingUpdate. The home volume is
+# a ReadWriteOnce Longhorn PVC, so two pods can never mount it at once; a
+# rolling update would deadlock with the new pod stuck ContainerCreating on a
+# volume the old pod still holds. Recreate tears the old one down first, which
+# is also what a single-user dev workspace wants anyway.
+#
+# Note this makes pod names generated (coder-<owner>-<workspace>-<hash>) rather
+# than fixed, so anything scripted against the old exact pod name needs a label
+# selector instead: -l coder.workspace=<name>.
+resource "kubernetes_deployment_v1" "main" {
   metadata {
     name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}"
     namespace = "coder"
   }
   spec {
-    # Mounting the PVC directly at /home/coder in the main container hides
-    # whatever the image has baked in at that same path (confirmed
-    # empirically: `docker run` against the raw image shows fish/go/kubectl
-    # present via /home/coder/.nix-profile, but a workspace with the PVC
-    # mounted there had none of it -- the empty volume shadows the image
-    # content, standard Kubernetes mount behavior). Fix: this init
-    # container mounts the PVC at a different path (so nothing shadows the
-    # image's real /home/coder here) and, only on first boot, copies the
-    # baked home directory into it. The main container's mount then sees a
-    # pre-seeded copy instead of an empty directory. First-boot detection
-    # checks specifically for .nix-profile, not "is the directory empty" --
-    # a fresh ext4-formatted Longhorn volume always contains a lost+found
-    # directory, so a naive emptiness check (confirmed empirically) never
-    # sees the volume as empty and the seed never runs. Known limitation:
-    # only seeds once -- if nixos-config publishes a new image later, an
-    # already-created workspace's PVC won't pick up the updated profile
-    # automatically (would need a fresh workspace, or a manual
-    # `home-manager switch` inside it).
-    init_container {
-      name    = "seed-home"
-      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
-      command = ["sh", "-c", "if [ ! -e /mnt/persistent-home/.nix-profile ]; then cp -a /home/coder/. /mnt/persistent-home/; fi"]
+    replicas = data.coder_workspace.me.start_count
 
-      volume_mount {
-        mount_path = "/mnt/persistent-home"
-        name       = "home"
+    strategy {
+      type = "Recreate"
+    }
+
+    selector {
+      match_labels = {
+        "coder.workspace" = data.coder_workspace.me.name
+        "coder.owner"     = data.coder_workspace_owner.me.name
       }
     }
 
-    container {
-      name    = "dev"
-      image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
-      command = ["sh", "-c", local.agent_start_script]
-
-      env {
-        name  = "CODER_AGENT_TOKEN"
-        value = coder_agent.main.token
+    template {
+      metadata {
+        labels = {
+          "coder.workspace" = data.coder_workspace.me.name
+          "coder.owner"     = data.coder_workspace_owner.me.name
+        }
       }
+      spec {
+        # Mounting the PVC directly at /home/coder in the main container hides
+        # whatever the image has baked in at that same path (confirmed
+        # empirically: `docker run` against the raw image shows fish/go/kubectl
+        # present via /home/coder/.nix-profile, but a workspace with the PVC
+        # mounted there had none of it -- the empty volume shadows the image
+        # content, standard Kubernetes mount behavior). Fix: this init
+        # container mounts the PVC at a different path (so nothing shadows the
+        # image's real /home/coder here) and, only on first boot, copies the
+        # baked home directory into it. The main container's mount then sees a
+        # pre-seeded copy instead of an empty directory. First-boot detection
+        # checks specifically for .nix-profile, not "is the directory empty" --
+        # a fresh ext4-formatted Longhorn volume always contains a lost+found
+        # directory, so a naive emptiness check (confirmed empirically) never
+        # sees the volume as empty and the seed never runs. Known limitation:
+        # only seeds once -- if nixos-config publishes a new image later, an
+        # already-created workspace's PVC won't pick up the updated profile
+        # automatically (would need a fresh workspace, or a manual
+        # `home-manager switch` inside it).
+        init_container {
+          name    = "seed-home"
+          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
+          command = ["sh", "-c", "if [ ! -e /mnt/persistent-home/.nix-profile ]; then cp -a /home/coder/. /mnt/persistent-home/; fi"]
 
-      volume_mount {
-        mount_path = "/home/coder"
-        name       = "home"
+          volume_mount {
+            mount_path = "/mnt/persistent-home"
+            name       = "home"
+          }
+        }
+
+        container {
+          name    = "dev"
+          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:ca95a3f6631e67fe573d12d89cfd3114adaedcf15564719b551198b765043a20"
+          command = ["sh", "-c", local.agent_start_script]
+
+          env {
+            name  = "CODER_AGENT_TOKEN"
+            value = coder_agent.main.token
+          }
+
+          volume_mount {
+            mount_path = "/home/coder"
+            name       = "home"
+          }
+        }
+
+        volume {
+          name = "home"
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
+          }
+        }
+
+        host_aliases {
+          ip        = local.traefik_private_cluster_ip
+          hostnames = [local.coder_access_host]
+        }
       }
-    }
-
-    volume {
-      name = "home"
-      persistent_volume_claim {
-        claim_name = kubernetes_persistent_volume_claim_v1.home.metadata[0].name
-      }
-    }
-
-    host_aliases {
-      ip        = local.traefik_private_cluster_ip
-      hostnames = [local.coder_access_host]
     }
   }
 
-  # The image is large (go/rust/node/kotlin toolchains, vscode, etc.) --
-  # a cold pull on a node that hasn't cached it yet can take several
-  # minutes, well past this resource's default wait timeout. Confirmed
-  # empirically: a real workspace creation hit "context deadline exceeded"
-  # waiting on a first-time pull.
+  # The image is large (go/rust/node/kotlin toolchains) -- a cold pull on a node
+  # that hasn't cached it yet can take several minutes, well past this resource's
+  # default wait timeout. Confirmed empirically: a real workspace creation hit
+  # "context deadline exceeded" waiting on a first-time pull. update matters as
+  # much as create now: with Recreate, an image change tears down the old pod and
+  # waits on the new one pulling.
   timeouts {
     create = "15m"
+    update = "15m"
   }
 }

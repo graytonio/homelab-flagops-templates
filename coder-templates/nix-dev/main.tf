@@ -275,9 +275,22 @@ resource "coder_script" "code_server" {
     # Coder supplies the key half of SSH auth itself, via
     # GIT_SSH_COMMAND=<agent> gitssh, so once the host is known and that key is
     # registered with the forge, SSH URLs work with no further setup.
-    KNOWN_HOSTS=/home/coder/.ssh/known_hosts
-    mkdir -p /home/coder/.ssh
-    chmod 700 /home/coder/.ssh
+    # The system-wide file, NOT ~/.ssh/known_hosts, and that distinction is the
+    # whole reason this works. OpenSSH expands `~` from the *passwd entry*, not
+    # $HOME: this container runs as root, whose passwd home is /root, while HOME
+    # is /home/coder. Seeding /home/coder/.ssh/known_hosts therefore wrote a file
+    # ssh never opens -- confirmed with `ssh -v`, which reported
+    # "fopen /root/.ssh/known_hosts: No such file or directory" while a fully
+    # populated /home/coder/.ssh/known_hosts sat right there. Same
+    # $HOME-versus-passwd divergence documented on the install paths above,
+    # landing the opposite way round.
+    #
+    # /etc/ssh/ssh_known_hosts sidesteps the question entirely: ssh consults it
+    # for every user regardless of home directory. It lives on the image's
+    # ephemeral filesystem rather than the PVC, so it is re-seeded on each start,
+    # which costs one API call and three keyscans and keeps the keys fresh.
+    KNOWN_HOSTS=/etc/ssh/ssh_known_hosts
+    mkdir -p /etc/ssh
     touch "$KNOWN_HOSTS"
 
     # GitHub's keys come from its meta API over TLS rather than ssh-keyscan.
@@ -307,7 +320,9 @@ resource "coder_script" "code_server" {
         fi
       fi
     done
-    chmod 600 "$KNOWN_HOSTS"
+    # World-readable on purpose: this is a system-wide file of public host keys,
+    # and any user in the container needs to read it.
+    chmod 644 "$KNOWN_HOSTS"
 
     # Clone the workspace's repo, if one is configured and not already present.
     # Absent-directory check rather than a marker file, so this is genuinely

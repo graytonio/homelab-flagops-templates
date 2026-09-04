@@ -267,6 +267,48 @@ resource "coder_script" "code_server" {
     # LIB_DIR itself out of scope; any leftover .partial tree is swept too.
     find "$LIB_DIR" -mindepth 1 -maxdepth 1 -name 'code-server-*' ! -name "code-server-$VERSION" -exec rm -rf {} +
 
+    # Seed SSH host keys before any clone. A fresh workspace has no
+    # ~/.ssh/known_hosts and the clone runs without a tty, so an SSH URL dies on
+    # "Host key verification failed" before authentication is even attempted --
+    # confirmed empirically against github.com.
+    #
+    # Coder supplies the key half of SSH auth itself, via
+    # GIT_SSH_COMMAND=<agent> gitssh, so once the host is known and that key is
+    # registered with the forge, SSH URLs work with no further setup.
+    KNOWN_HOSTS=/home/coder/.ssh/known_hosts
+    mkdir -p /home/coder/.ssh
+    chmod 700 /home/coder/.ssh
+    touch "$KNOWN_HOSTS"
+
+    # GitHub's keys come from its meta API over TLS rather than ssh-keyscan.
+    # keyscan is trust-on-first-use -- it records whatever answers, including a
+    # man-in-the-middle -- while this response is authenticated by the
+    # certificate chain. Fetching also beats pinning fingerprints in this file,
+    # which would silently rot: GitHub replaced its RSA host key in 2023 after
+    # it was briefly exposed.
+    if ! ssh-keygen -F github.com -f "$KNOWN_HOSTS" >/dev/null 2>&1; then
+      if gh_keys=$(curl -fsS --max-time 20 https://api.github.com/meta | jq -r '.ssh_keys[]? | "github.com " + .') && [ -n "$gh_keys" ]; then
+        printf '%s\n' "$gh_keys" >> "$KNOWN_HOSTS"
+        log "seeded github.com host keys from api.github.com/meta"
+      else
+        log "WARNING: could not fetch GitHub host keys; SSH clones from github.com will fail"
+      fi
+    fi
+
+    # These have no equivalent published endpoint, so they are trust-on-first-use
+    # via ssh-keyscan. A deliberate trade-off: the alternative is hardcoding
+    # fingerprints that go stale without anyone noticing.
+    for host in gitlab.com bitbucket.org codeberg.org; do
+      if ! ssh-keygen -F "$host" -f "$KNOWN_HOSTS" >/dev/null 2>&1; then
+        if ssh-keyscan -T 10 "$host" 2>/dev/null >> "$KNOWN_HOSTS"; then
+          log "seeded $host host keys (ssh-keyscan, trust-on-first-use)"
+        else
+          log "WARNING: could not scan host keys for $host"
+        fi
+      fi
+    done
+    chmod 600 "$KNOWN_HOSTS"
+
     # Clone the workspace's repo, if one is configured and not already present.
     # Absent-directory check rather than a marker file, so this is genuinely
     # first-start-only and can never clobber work in an existing clone -- if the

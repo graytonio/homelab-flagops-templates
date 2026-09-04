@@ -63,10 +63,33 @@ without being recreated:
 coder update homelab-management --parameter repo_url=https://github.com/graytonio/nixos-config
 ```
 
-Both `https://` and `git@` forms work, with or without a trailing `.git`.
-Private GitHub repos over HTTPS need no extra setup — the agent configures
-`GIT_ASKPASS` from the `primary-github` external auth once that one-time
-authorization is granted.
+**Use the `https://` form.** Both shapes parse correctly, with or without a
+trailing `.git`, but only HTTPS actually authenticates out of the box:
+
+```
+https://github.com/graytonio/homelab-flagops-templates.git
+```
+
+`git@` SSH URLs fail, with two distinct blockers confirmed in a live
+workspace:
+
+1. `Host key verification failed` — there is no `~/.ssh/known_hosts`, and the
+   clone is non-interactive so it cannot accept the key.
+2. With the host key supplied manually, the clone still fails on access
+   rights. Coder sets `GIT_SSH_COMMAND=<agent> gitssh --` and offers its own
+   managed key, but that key is not registered on the GitHub account. Coder
+   prints it in the clone error, and it goes at
+   <https://github.com/settings/ssh/new>.
+
+Private repos over HTTPS are also unlikely to work from the clone: `GIT_ASKPASS`
+is **not** set in the environment the startup script runs in — verified by
+reading `/proc/<pid>/environ` of a process the agent spawned, which carries
+`GIT_SSH_COMMAND` but no `GIT_ASKPASS`. The `primary-github` external auth
+still covers interactive git use inside the workspace; it just does not reach
+this script.
+
+So: public repos over HTTPS work today. Private repos, or SSH URLs, need the
+Coder key added to GitHub and `known_hosts` seeded first.
 
 Two behaviours worth knowing:
 

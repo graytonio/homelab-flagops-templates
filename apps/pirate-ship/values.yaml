@@ -262,7 +262,7 @@ sabnzbd:
         main:
           image:
             repository: linuxserver/sabnzbd
-            tag: 5.1.2
+            tag: 5.1.3
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York

@@ -49,19 +49,43 @@ creating a workspace from this template — see the `nixos-config` repo's
 without the image existing will succeed, but the first workspace creation
 will fail with `ImagePullBackOff`.
 
-## Cloning a repo into the workspace
+## Cloning repos into the workspace
 
-Workspace creation offers an optional **Git repository** field. Set it and
-the repo is cloned to `~/repos/<name>` on the next start, and the browser
-editor opens that directory instead of the home directory. Leave it empty
-and nothing changes.
+Workspace creation offers an optional **Git repositories** list. Each entry is
+cloned to `~/repos/<name>` on the next start. Leave it empty and nothing
+changes.
 
-The parameter is mutable, so an existing workspace can gain or change a repo
-without being recreated:
+What the editor opens depends on how many there are:
+
+| Repos | Editor opens |
+|---|---|
+| none | `/home/coder` |
+| one | that repo as the root |
+| two or more | `~/repos/<workspace>.code-workspace`, a multi-root workspace |
+
+The multi-root case is the point: all repos appear as top-level folders in one
+window, so search, go-to-definition and refactors span the whole project
+instead of stopping at a repo boundary. That is VS Code's own mechanism, not
+something bolted on here.
+
+The parameter is mutable, so an existing workspace can gain or change repos
+without being recreated. The value is a JSON array:
 
 ```bash
-coder update homelab-management --parameter repo_url=https://github.com/graytonio/nixos-config
+coder update homelab-management \
+  --parameter 'repo_urls=["git@github.com:graytonio/nixos-config.git","git@github.com:graytonio/homelab-flagops-templates.git"]'
 ```
+
+Adding a repo clones only the new one and adds it to the workspace file;
+removing one drops it from the workspace file and leaves the clone on disk.
+
+The `.code-workspace` file is **not** owned by the template. Only its `folders`
+key is rewritten, so workspace-level `settings`, `extensions.recommendations`
+and launch configs added by hand survive. If the file is not valid JSON it is
+left completely untouched, with a warning in the log.
+
+Entries that are not `https://` or `git@` URLs are silently dropped, as are any
+containing characters that do not belong in a git URL.
 
 **Use the `https://` form.** Both shapes parse correctly, with or without a
 trailing `.git`, but only HTTPS actually authenticates out of the box:

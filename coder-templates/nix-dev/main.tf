@@ -35,32 +35,31 @@ data "coder_external_auth" "github" {
   optional = true
 }
 
-# Optional. Empty means "no repo" and every piece below no-ops, so a workspace
-# created without it behaves exactly as before.
+# Optional list. Empty means "no repos" and every piece below no-ops, so a
+# workspace created without it behaves exactly as before.
 #
-# mutable = true so an existing workspace can gain or change a repo via `coder
-# update` rather than having to be recreated -- which matters because the
-# workspaces that exist today predate this parameter. The clone itself only
-# happens on a start where the target directory is absent, so changing this
-# takes effect on the next start, and pointing it somewhere new never touches
-# the previous clone.
+# A list rather than a single string because the case this exists for is a
+# project spread across several repositories: they are cloned side by side under
+# ~/repos and, from two upwards, opened together as one multi-root VS Code
+# workspace so search and go-to-definition span all of them.
 #
-# The regex rejects anything that is not an https:// or git@ URL. That is
-# mostly a typo guard, but it also keeps shell metacharacters out of a value
-# that gets interpolated into the startup script below.
-data "coder_parameter" "repo_url" {
-  name         = "repo_url"
-  display_name = "Git repository"
-  description  = "Optional. Cloned to ~/repos/<name> on first start, and the browser editor opens it instead of the home directory. Leave empty for none."
-  type         = "string"
-  default      = ""
+# mutable = true so an existing workspace can gain or change repos via `coder
+# update` rather than being recreated. Each clone only happens on a start where
+# its target directory is absent, so adding a repo clones just the new one and
+# removing one leaves the existing clone untouched on disk.
+#
+# Replaces an earlier single-string `repo_url`. Coder stores list(string) values
+# as a JSON array, which a bare URL string would not parse as, so this is a new
+# parameter name rather than a type change on the old one -- existing workspaces
+# simply pick the list up empty on their next update.
+data "coder_parameter" "repo_urls" {
+  name         = "repo_urls"
+  display_name = "Git repositories"
+  description  = "Optional. Each is cloned to ~/repos/<name> on first start. One repo opens as the editor's root; two or more open together as a multi-root workspace."
+  type         = "list(string)"
+  default      = jsonencode([])
   mutable      = true
   icon         = "/icon/git.svg"
-
-  validation {
-    regex = "^$|^(https://|git@)\\S+$"
-    error = "Must be empty, or an https:// or git@ URL."
-  }
 }
 
 locals {
@@ -153,19 +152,51 @@ locals {
   # cleanly alongside rather than half-overwriting the old tree.
   code_server_dir = "/home/coder/.local/lib/code-server-${local.code_server_version}"
 
+  # The parameter arrives as a JSON array string. Guarded against an empty value
+  # because jsondecode("") is an error, and a workspace migrating from the old
+  # single-string parameter can present exactly that.
+  repo_urls_raw = trimspace(data.coder_parameter.repo_urls.value) == "" ? [] : jsondecode(data.coder_parameter.repo_urls.value)
+
+  # Filtered, not merely trimmed. These values are interpolated into the startup
+  # script, so the character class is an allowlist of what actually appears in a
+  # git URL rather than a blocklist of what looks dangerous.
+  #
+  # Shell safety here rests on the single-quoted assignment below -- inside single
+  # quotes $(...) and backticks are inert -- and excluding the quote character is
+  # what guarantees a value cannot escape them. The allowlist is belt and braces
+  # on top of that, and it also stops a malformed entry from producing a nonsense
+  # clone directory: `https://host/$(cmd)x` is harmless but would otherwise create
+  # a directory literally named `$(cmd)x`.
+  repo_urls = [
+    for u in local.repo_urls_raw : trimspace(u)
+    if can(regex("^(https://|git@)[A-Za-z0-9._~:/@+-]+$", trimspace(u)))
+  ]
+
   # basename handles both URL shapes without special-casing: it splits on "/",
   # so https://host/org/repo and git@host:org/repo.git both reduce to the repo
   # segment, and trimsuffix drops the .git. Trailing slashes are handled too
   # (basename follows filepath.Base semantics).
-  repo_url  = trimspace(data.coder_parameter.repo_url.value)
-  repo_name = local.repo_url == "" ? "" : trimsuffix(basename(local.repo_url), ".git")
-  repo_dir  = local.repo_url == "" ? "" : "/home/coder/repos/${local.repo_name}"
+  repo_names = [for u in local.repo_urls : trimsuffix(basename(u), ".git")]
+  repo_dirs  = [for n in local.repo_names : "/home/coder/repos/${n}"]
 
-  # What the browser editor opens. Resolved here rather than in the script
-  # because coder_app.url is a Terraform value, not something the workspace can
-  # decide at runtime -- which is fine, since the parameter is known at apply
-  # time. Falls back to the home directory when no repo is configured.
-  code_server_folder = local.repo_dir == "" ? "/home/coder" : local.repo_dir
+  # Multi-root workspace file, written next to the clones so its folder entries
+  # can be plain relative names.
+  workspace_file = "/home/coder/repos/${data.coder_workspace.me.name}.code-workspace"
+  workspace_folders_json = jsonencode([
+    for n in local.repo_names : { path = n }
+  ])
+
+  # What the browser editor opens, resolved here because coder_app.url is a
+  # Terraform value rather than something the workspace decides at runtime.
+  # Three cases on purpose: no repos falls back to the home directory; exactly
+  # one opens that repo directly, since a single-folder multi-root workspace is
+  # just noise; two or more open the .code-workspace so the repos share one
+  # window and cross-repo search works.
+  code_server_query = (
+    length(local.repo_dirs) == 0 ? "folder=/home/coder" :
+    length(local.repo_dirs) == 1 ? "folder=${local.repo_dirs[0]}" :
+    "workspace=${local.workspace_file}"
+  )
 }
 
 resource "coder_agent" "main" {
@@ -324,26 +355,62 @@ resource "coder_script" "code_server" {
     # and any user in the container needs to read it.
     chmod 644 "$KNOWN_HOSTS"
 
-    # Clone the workspace's repo, if one is configured and not already present.
-    # Absent-directory check rather than a marker file, so this is genuinely
-    # first-start-only and can never clobber work in an existing clone -- if the
-    # directory is there, for any reason, this leaves it alone.
+    # Clone each configured repo that is not already present. Absent-directory
+    # check rather than a marker file, so this is genuinely first-start-only per
+    # repo and can never clobber work in an existing clone -- if the directory is
+    # there, for any reason, it is left alone.
     #
-    # Single-quoted because the value comes from a workspace parameter: with
+    # Single-quoted because the values come from a workspace parameter: with
     # double quotes a URL containing $(...) or backticks would execute here. The
-    # parameter's validation regex is the first line of defence; this is the
-    # second.
+    # Terraform-side filter rejecting anything but https:// and git@ URLs (and
+    # any value containing a single quote) is what makes this assignment safe.
+    # Newline-separated because a URL cannot contain a newline.
     #
-    # Never fatal. A bad URL, a private repo the GitHub authorization has not
-    # been granted for, or a network blip must not stop the workspace coming up
-    # -- it just starts without the clone and says so in the log.
-    REPO_URL='${local.repo_url}'
-    REPO_DIR='${local.repo_dir}'
-    if [ -n "$REPO_URL" ] && [ ! -d "$REPO_DIR" ]; then
-      log "cloning $REPO_URL into $REPO_DIR"
-      mkdir -p "$(dirname "$REPO_DIR")"
-      git clone "$REPO_URL" "$REPO_DIR" >> "$LOG" 2>&1 \
-        || log "WARNING: could not clone $REPO_URL; the workspace will start without it"
+    # Never fatal. A bad URL, an unauthorized private repo, or a network blip
+    # must not stop the workspace coming up -- it starts without that clone and
+    # says so in the log. One repo failing does not prevent the others.
+    REPO_URLS='${join("\n", local.repo_urls)}'
+    if [ -n "$REPO_URLS" ]; then
+      mkdir -p /home/coder/repos
+      printf '%s\n' "$REPO_URLS" | while IFS= read -r url; do
+        [ -n "$url" ] || continue
+        name=$(basename "$url" .git)
+        dir="/home/coder/repos/$name"
+        if [ -d "$dir" ]; then
+          log "repo $name already present, leaving it alone"
+        else
+          log "cloning $url into $dir"
+          git clone "$url" "$dir" >> "$LOG" 2>&1 \
+            || log "WARNING: could not clone $url; continuing without it"
+        fi
+      done
+    fi
+
+    # Multi-root workspace file, for two or more repos. Regenerating only the
+    # `folders` key rather than rewriting the file keeps anything added by hand
+    # -- workspace-level settings, extension recommendations, launch configs --
+    # while still letting the repo list change. Writing the whole file each time
+    # would silently discard that; seeding it once would leave the folder list
+    # permanently stale after a repo is added.
+    #
+    # Folder paths are relative to the file's own directory, so they are just the
+    # repo names and the file stays valid regardless of where home is mounted.
+    WS_FILE='${local.workspace_file}'
+    WS_FOLDERS='${local.workspace_folders_json}'
+    if [ "$(printf '%s' "$WS_FOLDERS" | jq 'length')" -gt 1 ]; then
+      if [ -f "$WS_FILE" ]; then
+        tmp=$(mktemp)
+        if jq --argjson f "$WS_FOLDERS" '.folders = $f' "$WS_FILE" > "$tmp" 2>/dev/null; then
+          mv "$tmp" "$WS_FILE"
+          log "updated folder list in $WS_FILE"
+        else
+          rm -f "$tmp"
+          log "WARNING: $WS_FILE is not valid JSON; leaving it untouched"
+        fi
+      else
+        jq -n --argjson f "$WS_FOLDERS" '{folders: $f, settings: {}}' > "$WS_FILE"
+        log "created multi-root workspace $WS_FILE"
+      fi
     fi
 
     # Editor defaults, seeded once. Deliberately only written when absent: this
@@ -438,7 +505,7 @@ resource "coder_app" "code_server" {
   agent_id     = coder_agent.main.id
   slug         = "code-server"
   display_name = "code-server"
-  url          = "http://localhost:${local.code_server_port}/?folder=${local.code_server_folder}"
+  url          = "http://localhost:${local.code_server_port}/?${local.code_server_query}"
   icon         = "/icon/code.svg"
   subdomain    = false
   share        = "owner"

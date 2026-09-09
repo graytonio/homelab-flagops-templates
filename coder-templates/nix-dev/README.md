@@ -69,11 +69,16 @@ instead of stopping at a repo boundary. That is VS Code's own mechanism, not
 something bolted on here.
 
 The parameter is mutable, so an existing workspace can gain or change repos
-without being recreated. The value is a JSON array:
+without being recreated. Easiest from the dashboard's workspace settings.
+
+From the CLI the quoting is genuinely awkward: `--parameter` parses its
+argument as a single CSV field, so a JSON array has to be CSV-escaped — the
+**whole** `name=value` wrapped in quotes, with every inner quote doubled.
+Anything less fails with `bare " in non-quoted-field`:
 
 ```bash
 coder update homelab-management \
-  --parameter 'repo_urls=["git@github.com:graytonio/nixos-config.git","git@github.com:graytonio/homelab-flagops-templates.git"]'
+  --parameter '"repo_urls=[""git@github.com:graytonio/nixos-config.git"",""git@github.com:graytonio/homelab-flagops-templates.git""]"'
 ```
 
 Adding a repo clones only the new one and adds it to the workspace file;

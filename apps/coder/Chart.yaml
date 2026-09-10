@@ -6,5 +6,5 @@ version: 0.1.0
 dependencies:
   - name: coder
     repository: https://helm.coder.com/v2
-    version: 2.36.3
+    version: 2.37.1
     alias: coder

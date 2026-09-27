@@ -62,7 +62,61 @@ data "coder_parameter" "repo_urls" {
   icon         = "/icon/git.svg"
 }
 
+# Opt-in, per-workspace read-only cluster access -- lets `kubectl get`/
+# `describe` work inside the workspace for verifying ArgoCD rollouts,
+# checking pod/PVC state, etc. Off by default: this workspace pod's
+# ServiceAccount otherwise has zero cluster RBAC (the coder chart's default
+# SA only grants pods/PVC management in the coder namespace itself, and that
+# grant belongs to the control-plane SA, not to workspace pods, which don't
+# set service_account_name at all today).
+#
+# Grants get/list/watch only, via a ClusterRole (coder-workspace-viewer,
+# defined once in apps/coder/templates/workspace-viewer-clusterrole.yaml)
+# bound per-namespace to this workspace's own ServiceAccount -- never a
+# ClusterRoleBinding, and never any write verb. mutable = true so an
+# existing workspace can toggle this via `coder update` rather than being
+# recreated (the Recreate deployment strategy below still applies the new
+# service_account_name on the next start).
+data "coder_parameter" "cluster_access" {
+  name         = "cluster_access"
+  display_name = "Cluster read access (RBAC)"
+  description  = "Grants this workspace read-only (get/list/watch) access across the cluster's namespaces -- pods, deployments, services, ArgoCD Applications, etc. Off by default."
+  type         = "bool"
+  default      = "false"
+  mutable      = true
+  icon         = "/icon/kubernetes.svg"
+}
+
 locals {
+  cluster_access_enabled = tobool(data.coder_parameter.cluster_access.value)
+
+  # Mirrors apps/coder/values.yaml's workspaceAccessNamespaces (each entry
+  # there gets a narrow Role+RoleBinding letting the coder control-plane SA
+  # create a RoleBinding in that namespace -- see
+  # apps/coder/templates/workspace-rbac-provisioner.yaml). No automated sync
+  # between the two lists yet: adding a namespace here without also adding
+  # it there means kubernetes_role_binding_v1.cluster_access below fails
+  # with a 403 on create, since the control-plane SA won't have rights to
+  # create a RoleBinding in a namespace missing from that other list.
+  workspace_access_namespaces = [
+    "argocd",
+    "coder",
+    "db-operators",
+    "discord-file-sync-bot",
+    "external-dns",
+    "external-secrets",
+    "gotify",
+    "homeassistant",
+    "homepage",
+    "longhorn",
+    "metallb",
+    "observability",
+    "pirate-ship",
+    "reloader",
+    "system-upgrade",
+    "traefik",
+    "truenas-scale",
+  ]
   # The agent's init_script downloads the coder agent binary from a URL
   # baked in at template-push time from the server's CODER_ACCESS_URL --
   # this is NOT read dynamically from a CODER_AGENT_URL env var at
@@ -549,6 +603,48 @@ resource "kubernetes_persistent_volume_claim_v1" "home" {
   }
 }
 
+# Created only when the cluster_access parameter is on. Persists across
+# workspace stop/start like the PVC above (no count tied to start_count) --
+# a stopped workspace keeps its grant rather than losing it every stop/start
+# cycle.
+resource "kubernetes_service_account_v1" "cluster_access" {
+  count = local.cluster_access_enabled ? 1 : 0
+
+  metadata {
+    name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}-viewer"
+    namespace = "coder"
+  }
+}
+
+# One RoleBinding per namespace in local.workspace_access_namespaces,
+# each binding this workspace's ServiceAccount to the shared
+# coder-workspace-viewer ClusterRole (apps/coder/templates/
+# workspace-viewer-clusterrole.yaml) -- never a ClusterRoleBinding, so the
+# grant stays scoped to exactly the namespaces listed. Creating these
+# requires the control-plane SA to have rolebindings rights in each of
+# those namespaces, which apps/coder/templates/workspace-rbac-provisioner.yaml
+# grants.
+resource "kubernetes_role_binding_v1" "cluster_access" {
+  for_each = local.cluster_access_enabled ? toset(local.workspace_access_namespaces) : toset([])
+
+  metadata {
+    name      = "coder-${data.coder_workspace_owner.me.name}-${data.coder_workspace.me.name}-viewer"
+    namespace = each.value
+  }
+
+  role_ref {
+    api_group = "rbac.authorization.k8s.io"
+    kind      = "ClusterRole"
+    name      = "coder-workspace-viewer"
+  }
+
+  subject {
+    kind      = "ServiceAccount"
+    name      = one(kubernetes_service_account_v1.cluster_access[*].metadata[0].name)
+    namespace = "coder"
+  }
+}
+
 # replicas is 0 when the workspace is stopped and 1 when running -- this is
 # what makes Coder's stop/start work, with the PVC above staying put.
 #
@@ -594,6 +690,12 @@ resource "kubernetes_deployment_v1" "main" {
         }
       }
       spec {
+        # null (the default when cluster_access is off) makes Kubernetes fall
+        # back to the coder namespace's own "default" ServiceAccount, same as
+        # if this were never set -- unchanged behavior for every workspace
+        # that hasn't opted in.
+        service_account_name = one(kubernetes_service_account_v1.cluster_access[*].metadata[0].name)
+
         # Mounting the PVC directly at /home/coder in the main container hides
         # whatever the image has baked in at that same path (confirmed
         # empirically: `docker run` against the raw image shows fish/go/kubectl

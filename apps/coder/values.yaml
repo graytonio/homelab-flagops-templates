@@ -1,3 +1,32 @@
+# Namespaces where an opted-in workspace (coder-templates/nix-dev/main.tf's
+# cluster_access parameter) can get a read-only RoleBinding. Each entry gets a
+# narrow Role+RoleBinding (apps/coder/templates/workspace-rbac-provisioner.yaml)
+# granting the coder ServiceAccount below only rolebindings management in that
+# namespace -- never pods/PVCs, so this list growing doesn't widen what the
+# control plane itself can do. Mirrors apps/**/ (each app's Chart.yaml
+# directory name is its ArgoCD destination namespace, per
+# projects/production.yaml's ApplicationSet) plus argocd itself. Keep in sync
+# with local.workspace_access_namespaces in coder-templates/nix-dev/main.tf --
+# a namespace missing from one place silently has no effect there.
+workspaceAccessNamespaces:
+  - argocd
+  - coder
+  - db-operators
+  - discord-file-sync-bot
+  - external-dns
+  - external-secrets
+  - gotify
+  - homeassistant
+  - homepage
+  - longhorn
+  - metallb
+  - observability
+  - pirate-ship
+  - reloader
+  - system-upgrade
+  - traefik
+  - truenas-scale
+
 coder:
   # The upstream coder chart namespaces its own values under a top-level
   # `coder:` key internally (its templates read .Values.coder.ingress,
@@ -6,6 +35,24 @@ coder:
   # Values — so it must be nested one level deeper to actually reach the
   # subchart's templates.
   coder:
+    serviceAccount:
+      # The chart's default Role (workspacePerms: true, on by default) only
+      # covers pods/persistentvolumeclaims -- it has no rights to manage
+      # ServiceAccounts even in its own namespace. Needed so Terraform
+      # (running as this SA) can create the per-workspace ServiceAccount for
+      # coder-templates/nix-dev/main.tf's opt-in cluster_access parameter.
+      extraRules:
+        - apiGroups: [""]
+          resources: ["serviceaccounts"]
+          verbs:
+            - create
+            - delete
+            - get
+            - list
+            - patch
+            - update
+            - watch
+
     service:
       # Traefik fronts this via the Ingress below; the chart default of
       # LoadBalancer would otherwise consume a MetalLB IP unnecessarily.

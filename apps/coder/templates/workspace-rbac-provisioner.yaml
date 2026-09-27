@@ -1,0 +1,36 @@
+# Lets the coder control plane's own ServiceAccount manage RoleBindings in
+# each listed namespace -- nothing about pods/PVCs -- so that Terraform,
+# running in-cluster as that SA when it provisions a workspace, can create
+# the per-workspace RoleBinding coder-templates/nix-dev/main.tf needs for its
+# opt-in cluster_access parameter. Deliberately not using the coder subchart's
+# own workspaceNamespaces/extraRules knobs here: those force workspacePerms
+# on for every listed namespace, which grants full pod/PVC create+delete
+# there too -- far more than a read-only RoleBinding provisioner needs.
+{{- $saName := .Values.coder.coder.serviceAccount.name | default "coder" }}
+{{- $saNamespace := .Release.Namespace }}
+{{- range .Values.workspaceAccessNamespaces }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: coder-workspace-rbac-provisioner
+  namespace: {{ . }}
+rules:
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["rolebindings"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-workspace-rbac-provisioner
+  namespace: {{ . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ $saName }}
+    namespace: {{ $saNamespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: coder-workspace-rbac-provisioner
+{{- end }}

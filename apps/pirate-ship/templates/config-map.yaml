@@ -26,6 +26,8 @@ data:
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>radarrmain</PostgresMainDb>
             <PostgresLogDb>radarrlog</PostgresLogDb>
+            <AllowedHosts></AllowedHosts>
+            <TrustedNetworks></TrustedNetworks>
         </Config>
 ---
 apiVersion: v1
@@ -56,6 +58,8 @@ data:
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>sonarrmain</PostgresMainDb>
             <PostgresLogDb>sonarrlog</PostgresLogDb>
+            <AllowedHosts></AllowedHosts>
+            <TrustedNetworks></TrustedNetworks>
         </Config>
 ---
 apiVersion: v1

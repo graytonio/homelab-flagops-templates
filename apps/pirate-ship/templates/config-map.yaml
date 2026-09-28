@@ -27,7 +27,7 @@ data:
             <PostgresMainDb>radarrmain</PostgresMainDb>
             <PostgresLogDb>radarrlog</PostgresLogDb>
             <AllowedHosts></AllowedHosts>
-            <TrustedNetworks></TrustedNetworks>
+            <TrustedNetworks>10.42.0.0/16</TrustedNetworks>
         </Config>
 ---
 apiVersion: v1
@@ -59,7 +59,7 @@ data:
             <PostgresMainDb>sonarrmain</PostgresMainDb>
             <PostgresLogDb>sonarrlog</PostgresLogDb>
             <AllowedHosts></AllowedHosts>
-            <TrustedNetworks></TrustedNetworks>
+            <TrustedNetworks>10.42.0.0/16</TrustedNetworks>
         </Config>
 ---
 apiVersion: v1

@@ -1,0 +1,10 @@
+apiVersion: v2
+name: zwilling-tracker
+description: Tracks what's in Zwilling food storage containers by scanning their QR codes
+type: application
+version: 0.1.0
+dependencies:
+  - name: app-template
+    repository: https://bjw-s-labs.github.io/helm-charts/
+    version: 5.2.1
+    alias: zwilling-tracker

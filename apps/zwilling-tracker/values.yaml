@@ -1,0 +1,63 @@
+zwilling-tracker:
+  controllers:
+    main:
+      enabled: true
+      replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      containers:
+        main:
+          image:
+            repository: ghcr.io/graytonio/zwilling-tracker
+            tag: 0.2.0
+            pullPolicy: IfNotPresent
+          env:
+            # Credentials come from the postgres-operator's generated secret (alphanumeric
+            # passwords, so they're safe to splice into a URL). PGUSER/PGPASSWORD must be
+            # listed before DATABASE_URL for $(VAR) expansion. Spilo only allows SSL.
+            # Until the operator creates the database, this pod crash-loops; it self-heals.
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: zwilling.zwilling-tracker-postgresql.credentials.postgresql.acid.zalan.do
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zwilling.zwilling-tracker-postgresql.credentials.postgresql.acid.zalan.do
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://$(PGUSER):$(PGPASSWORD)@zwilling-tracker-postgresql.zwilling-tracker.svc.cluster.local:5432/zwilling?sslmode=require
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 3000
+
+  # Private only: the app has no auth. HTTPS is required for the browser camera API.
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Food storage tracker
+        gethomepage.dev/group: Home
+        gethomepage.dev/icon: mdi-fridge-outline
+        gethomepage.dev/name: Zwilling Tracker
+      labels:
+        access: private
+      tls:
+      - hosts:
+        - zwilling.[{ env "env_domain" }]
+        secretName: tls-zwilling-tracker-ingress-dns
+      hosts:
+        - host: zwilling.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main

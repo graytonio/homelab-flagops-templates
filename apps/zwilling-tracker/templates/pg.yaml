@@ -1,0 +1,15 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: zwilling-tracker-postgresql
+spec:
+  teamId: "zwilling-tracker"
+  volume:
+    size: 1Gi
+  numberOfInstances: 1
+  users:
+    zwilling: []  # database owner; the app creates its own table on startup
+  databases:
+    zwilling: zwilling
+  postgresql:
+    version: "17"

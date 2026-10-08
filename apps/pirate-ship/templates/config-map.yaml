@@ -90,6 +90,8 @@ data:
             <PostgresHost>pirate-ship-postgresql.pirate-ship.svc.cluster.local</PostgresHost>
             <PostgresMainDb>prowlarrmain</PostgresMainDb>
             <PostgresLogDb>prowlarrlog</PostgresLogDb>
+            <AllowedHosts></AllowedHosts>
+            <TrustedNetworks>10.42.0.0/16</TrustedNetworks>
         </Config>
 ---
 apiVersion: v1

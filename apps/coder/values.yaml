@@ -33,26 +33,6 @@ coder:
   # Values — so it must be nested one level deeper to actually reach the
   # subchart's templates.
   coder:
-    serviceAccount:
-      # The chart's default Role (workspacePerms: true, on by default) only
-      # covers pods/persistentvolumeclaims -- it has no rights to manage
-      # ServiceAccounts even in its own namespace. TRANSITIONAL: workspaces
-      # now share the ArgoCD-managed coder-workspace-viewer SA; this stays
-      # only so Terraform can delete each workspace's old per-workspace SA on
-      # its next build. Remove together with
-      # templates/workspace-rbac-provisioner.yaml.
-      extraRules:
-        - apiGroups: [""]
-          resources: ["serviceaccounts"]
-          verbs:
-            - create
-            - delete
-            - get
-            - list
-            - patch
-            - update
-            - watch
-
     service:
       # Traefik fronts this via the Ingress below; the chart default of
       # LoadBalancer would otherwise consume a MetalLB IP unnecessarily.

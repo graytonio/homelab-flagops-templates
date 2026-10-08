@@ -100,9 +100,51 @@ done
 
 All four conditions are required together.
 
+**Single-source Applications are the opposite.** `argo-cd` (and any other
+Application with singular `spec.source`) records its revision in
+`.status.sync.revision` and leaves `.status.history[-1:].revisions` empty, so
+the poll above never matches for it. Read both and use whichever is set:
+`-o jsonpath='{.status.history[-1:].revisions[0]}{.status.sync.revision}'`.
+Similarly, `.status.operationState.syncResult` only describes the *last*
+operation — ArgoCD sometimes follows a full sync with an immediate "partial
+sync" (seen pruning RBAC in coder), so prune counts there can look short. To
+confirm a prune, check the resource is absent from `.status.resources`.
+
 **ArgoCD's "Healthy" can lag reality.** Cross-check actual pods:
 `kubectl -n <namespace> get pods`. A pod can crash-loop for a few seconds
 right after sync while ArgoCD still reports stale "Healthy".
+
+**`Running 1/1` does not mean the app is up — always make a real request.**
+Several images here (linuxserver/* in pirate-ship) keep the container alive
+after the application process exits, and app-template's default TCP probes
+don't catch it. Prowlarr 2.5.2 → 2.6.5 (#189) was reported "verified" on
+pod readiness alone while the app had crashed at startup; Traefik returned
+502 for over an hour until a later sweep caught it. After every rollout, hit
+the app's ingress and require a 2xx/3xx:
+
+```bash
+# Private hosts don't resolve from inside the cluster -- target the private
+# Traefik Service directly instead of relying on DNS.
+PIP=$(kubectl -n traefik get svc traefik-production-privateingress -o jsonpath='{.spec.clusterIP}')
+curl -s -o /dev/null -m 10 --resolve <host>:443:$PIP -w '%{http_code}\n' https://<host>/
+```
+
+and scan the logs for startup failures, not just restarts:
+`kubectl -n <ns> logs deploy/<name> | grep -E 'Fatal|Exception'`.
+
+**Gotcha — the *arr apps' `config.xml` is a read-only ConfigMap.** Radarr,
+Sonarr, Prowlarr and Lidarr mount `apps/pirate-ship/templates/config-map.yaml`
+at `/config/config.xml` via `subPath`. Any new release that reads a config
+key with `persist: true` (the default in `ConfigFileProvider.GetValue`) and
+finds it missing tries to write a default and **crashes on startup** with
+`UnauthorizedAccessException: Access to the path '/config/config.xml' is
+denied`. That's what broke Prowlarr 2.6.x (`AllowedHosts`). For any *arr
+bump, diff `src/NzbDrone.Core/Configuration/ConfigFileProvider.cs` between
+the old and new tags for new `GetValue("<Key>", ...)` calls without
+`persist: false`, and add each key to that app's ConfigMap (an empty element
+is fine -- an existing element is read without a write) **before** merging.
+One `[Error] Task Error ... config.xml is denied` per start from
+`DeleteOldValues` is expected and harmless — every *arr logs it.
 
 **StatefulSet/DaemonSet slow rollouts are normal.** Ordinal-by-ordinal
 replacement (seen with ArgoCD's own redis-ha-server, and observability's

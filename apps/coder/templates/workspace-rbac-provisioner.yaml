@@ -19,6 +19,13 @@ rules:
   - apiGroups: ["rbac.authorization.k8s.io"]
     resources: ["rolebindings"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # RBAC escalation prevention rejects a RoleBinding granting permissions the
+  # creator doesn't itself hold. `bind` on this one ClusterRole exempts it
+  # without handing the control plane the viewer's read rights.
+  - apiGroups: ["rbac.authorization.k8s.io"]
+    resources: ["clusterroles"]
+    verbs: ["bind"]
+    resourceNames: ["coder-workspace-viewer"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding

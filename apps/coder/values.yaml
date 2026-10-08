@@ -1,13 +1,10 @@
-# Namespaces where an opted-in workspace (coder-templates/nix-dev/main.tf's
-# cluster_access parameter) can get a read-only RoleBinding. Each entry gets a
-# narrow Role+RoleBinding (apps/coder/templates/workspace-rbac-provisioner.yaml)
-# granting the coder ServiceAccount below only rolebindings management in that
-# namespace -- never pods/PVCs, so this list growing doesn't widen what the
-# control plane itself can do. Mirrors apps/**/ (each app's Chart.yaml
-# directory name is its ArgoCD destination namespace, per
-# projects/production.yaml's ApplicationSet) plus argocd itself. Keep in sync
-# with local.workspace_access_namespaces in coder-templates/nix-dev/main.tf --
-# a namespace missing from one place silently has no effect there.
+# Namespaces where workspaces that opt in (coder-templates/nix-dev/main.tf's
+# cluster_access parameter) get read-only access: each entry gets a
+# RoleBinding of the coder-workspace-viewer ClusterRole to the shared
+# coder-workspace-viewer ServiceAccount (templates/workspace-viewer.yaml).
+# Mirrors apps/**/ (each app's Chart.yaml directory name is its ArgoCD
+# destination namespace, per projects/production.yaml's ApplicationSet) plus
+# argocd itself -- add new apps here.
 workspaceAccessNamespaces:
   - argocd
   - coder
@@ -26,6 +23,7 @@ workspaceAccessNamespaces:
   - system-upgrade
   - traefik
   - truenas-scale
+  - zwilling-tracker
 
 coder:
   # The upstream coder chart namespaces its own values under a top-level
@@ -38,9 +36,11 @@ coder:
     serviceAccount:
       # The chart's default Role (workspacePerms: true, on by default) only
       # covers pods/persistentvolumeclaims -- it has no rights to manage
-      # ServiceAccounts even in its own namespace. Needed so Terraform
-      # (running as this SA) can create the per-workspace ServiceAccount for
-      # coder-templates/nix-dev/main.tf's opt-in cluster_access parameter.
+      # ServiceAccounts even in its own namespace. TRANSITIONAL: workspaces
+      # now share the ArgoCD-managed coder-workspace-viewer SA; this stays
+      # only so Terraform can delete each workspace's old per-workspace SA on
+      # its next build. Remove together with
+      # templates/workspace-rbac-provisioner.yaml.
       extraRules:
         - apiGroups: [""]
           resources: ["serviceaccounts"]

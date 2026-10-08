@@ -410,6 +410,9 @@ overseerr:
   defaultPodOptions:
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-overseer
+    securityContext:
+      fsGroup: 1000
+      fsGroupChangePolicy: OnRootMismatch
   controllers:
     main:
       enabled: true
@@ -419,13 +422,19 @@ overseerr:
       containers:
         main:
           image:
-            repository: linuxserver/overseerr
-            tag: 1.35.0
+            repository: ghcr.io/seerr-team/seerr
+            tag: v3.5.0
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York
-            PUID: 1000
-            PGID: 1000
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            capabilities:
+              drop:
+                - ALL
   ingress:
     main:
       enabled: true
@@ -433,10 +442,10 @@ overseerr:
         cert-manager.io/cluster-issuer: letsencrypt
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
         gethomepage.dev/enabled: "true"
-        gethomepage.dev/description: Overseerr
+        gethomepage.dev/description: Media Requests
         gethomepage.dev/group: Pirate Ship
-        gethomepage.dev/icon: overseerr.png
-        gethomepage.dev/name: Overseerr
+        gethomepage.dev/icon: seerr.png
+        gethomepage.dev/name: Seerr
         gethomepage.dev/pod-selector: "app.kubernetes.io/name=overseerr"
         external-dns.alpha.kubernetes.io/target: [{ env "external_service_public_endpoint" }]
       labels:
@@ -467,4 +476,4 @@ overseerr:
       size: 1Gi
       forceRename: pirate-ship-overseerr-config
       globalMounts:
-        - path: /config
+        - path: /app/config

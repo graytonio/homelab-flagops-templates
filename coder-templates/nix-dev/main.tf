@@ -548,6 +548,70 @@ resource "coder_script" "code_server" {
   EOT
 }
 
+# Signs gh in with the owner's Coder GitHub external auth (primary-github),
+# so a fresh workspace needs no `gh auth login`. Lives here rather than in
+# the home-manager config deliberately: it depends on this template's
+# external auth and the Coder agent, neither of which exists anywhere else
+# that config is used.
+#
+# A wrapper fetching a token per invocation, not a GH_TOKEN env var or a
+# one-off `gh auth login --with-token`: primary-github is a GitHub App, whose
+# user tokens expire after ~8 hours. Anything captured at build or start time
+# goes stale mid-session; `coder external-auth access-token` returns a token
+# Coder has refreshed as needed (~0.4s per call, measured).
+#
+# Installed into CODER_SCRIPT_BIN_DIR, which the agent puts on PATH ahead of
+# ~/.nix-profile/bin for every session (terminals, SSH, code-server). That
+# directory is under /tmp, so the wrapper never touches the home PVC and is
+# rewritten on every start -- removing this resource removes it cleanly.
+#
+# The wrapper finds the real gh by walking PATH and skipping its own
+# directory, rather than hardcoding a Nix store path that changes with every
+# image bump. It falls back to plain gh (whatever ~/.config/gh holds) when
+# the owner hasn't authorized primary-github yet -- the external auth is
+# optional, so that state is normal -- and an explicitly set GH_TOKEN always
+# wins.
+resource "coder_script" "gh_auth" {
+  agent_id     = coder_agent.main.id
+  display_name = "gh auth"
+  icon         = "/icon/github.svg"
+  run_on_start = true
+
+  script = <<-EOT
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    BIN_DIR="$CODER_SCRIPT_BIN_DIR"
+    mkdir -p "$BIN_DIR"
+    {
+      printf '#!/bin/sh\nself_dir=%s\n' "'$BIN_DIR'"
+      cat <<'WRAPPER'
+    real=
+    set -f
+    IFS=:
+    for d in $PATH; do
+      [ "$d" = "$self_dir" ] && continue
+      [ -x "$d/gh" ] && { real="$d/gh"; break; }
+    done
+    unset IFS
+    set +f
+    if [ -z "$real" ]; then
+      echo "gh: real gh binary not found on PATH" >&2
+      exit 127
+    fi
+    if [ -z "$${GH_TOKEN:-}" ] && token=$(coder external-auth access-token ${data.coder_external_auth.github.id} 2>/dev/null) && [ -n "$token" ]; then
+      GH_TOKEN="$token"
+      export GH_TOKEN
+    fi
+    exec "$real" "$@"
+    WRAPPER
+    } > "$BIN_DIR/gh.tmp"
+    chmod 755 "$BIN_DIR/gh.tmp"
+    mv "$BIN_DIR/gh.tmp" "$BIN_DIR/gh"
+    echo "installed gh wrapper at $BIN_DIR/gh"
+  EOT
+}
+
 # subdomain = false serves this path-based on the existing hostname, at
 # coder.<domain>/@<user>/<workspace>.main/apps/code-server/ -- so no
 # CODER_WILDCARD_ACCESS_URL, no wildcard Ingress, no wildcard DNS record, and

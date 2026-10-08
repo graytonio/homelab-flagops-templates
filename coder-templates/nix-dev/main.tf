@@ -612,6 +612,38 @@ resource "coder_script" "gh_auth" {
   EOT
 }
 
+# Marks Claude Code's first-run onboarding (theme picker, login screen) as
+# done, so the CLAUDE_CODE_OAUTH_TOKEN env on the dev container below is used
+# straight away -- without this a fresh workspace still walks through the
+# onboarding screens before ever reading the token. Merges the one key into
+# any existing ~/.claude.json rather than overwriting it, since that file also
+# holds per-project state and history; a file jq can't parse is left alone.
+#
+# The path is spelled out rather than taken from $HOME for the same reason as
+# the code-server script above: the agent's login shell may carry root's
+# passwd home (/root) instead of the container's /home/coder.
+resource "coder_script" "claude_onboarding" {
+  agent_id     = coder_agent.main.id
+  display_name = "Claude Code onboarding"
+  icon         = "/icon/claude.svg"
+  run_on_start = true
+
+  script = <<-EOT
+    #!/usr/bin/env bash
+    set -euo pipefail
+
+    CONFIG=/home/coder/.claude.json
+    [ -s "$CONFIG" ] || echo '{}' > "$CONFIG"
+    if ! jq -e 'type == "object"' "$CONFIG" >/dev/null 2>&1; then
+      echo "$CONFIG is not a JSON object; leaving it untouched" >&2
+      exit 0
+    fi
+    jq '.hasCompletedOnboarding = true' "$CONFIG" > "$CONFIG.tmp"
+    mv "$CONFIG.tmp" "$CONFIG"
+    echo "marked Claude Code onboarding complete in $CONFIG"
+  EOT
+}
+
 # subdomain = false serves this path-based on the existing hostname, at
 # coder.<domain>/@<user>/<workspace>.main/apps/code-server/ -- so no
 # CODER_WILDCARD_ACCESS_URL, no wildcard Ingress, no wildcard DNS record, and
@@ -797,6 +829,24 @@ resource "kubernetes_deployment_v1" "main" {
           env {
             name  = "CODER_AGENT_TOKEN"
             value = coder_agent.main.token
+          }
+
+          # Long-lived (~1 year) token from `claude setup-token`, synced from
+          # AWS Secrets Manager by apps/coder/templates/claude-token-secret.yaml.
+          # Claude Code reads it instead of a stored login, so new workspaces
+          # need no `claude /login`. optional = true: if the Secret is missing
+          # (not yet synced, or removed) the pod still starts and Claude falls
+          # back to an interactive login. Rotate by updating the AWS secret and
+          # restarting workspaces -- env is only read at container start.
+          env {
+            name = "CLAUDE_CODE_OAUTH_TOKEN"
+            value_from {
+              secret_key_ref {
+                name     = "coder-claude-token"
+                key      = "token"
+                optional = true
+              }
+            }
           }
 
           volume_mount {

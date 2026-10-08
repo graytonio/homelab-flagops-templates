@@ -1,0 +1,79 @@
+# Shared read-only identity for workspaces that opt in via
+# coder-templates/nix-dev/main.tf's cluster_access parameter, which just sets
+# the workspace pod's serviceAccountName to this. Every grant lives here,
+# managed by ArgoCD, so Terraform (running as the coder control-plane SA)
+# needs no RBAC-management rights of its own.
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: coder-workspace-viewer
+  namespace: {{ .Release.Namespace }}
+{{- range .Values.workspaceAccessNamespaces }}
+---
+# Namespaced reads (coder-workspace-viewer ClusterRole) are bound
+# per-namespace, so the grant stays limited to workspaceAccessNamespaces.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: coder-workspace-viewer
+  namespace: {{ . }}
+subjects:
+  - kind: ServiceAccount
+    name: coder-workspace-viewer
+    namespace: {{ $.Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coder-workspace-viewer
+{{- end }}
+---
+# Cluster-scoped kinds have no namespace, so a RoleBinding can't grant them.
+# Read-only, and nothing here exposes secret values.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: coder-workspace-cluster-viewer
+rules:
+  - apiGroups: [""]
+    resources:
+      - nodes
+      - persistentvolumes
+      - namespaces
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources:
+      - storageclasses
+      - volumeattachments
+      - csidrivers
+      - csinodes
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["networking.k8s.io"]
+    resources: ["ingressclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["cert-manager.io"]
+    resources: ["clusterissuers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["external-secrets.io"]
+    resources:
+      - clustersecretstores
+      - clusterexternalsecrets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: coder-workspace-cluster-viewer
+subjects:
+  - kind: ServiceAccount
+    name: coder-workspace-viewer
+    namespace: {{ .Release.Namespace }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: coder-workspace-cluster-viewer

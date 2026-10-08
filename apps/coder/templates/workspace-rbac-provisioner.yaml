@@ -1,3 +1,10 @@
+# TRANSITIONAL -- remove (with the serviceaccounts extraRules in values.yaml)
+# once every workspace that had cluster_access on has been rebuilt with the
+# shared-ServiceAccount template. Workspaces now use workspace-viewer.yaml's
+# ArgoCD-managed coder-workspace-viewer SA; this only remains so Terraform
+# can still delete each workspace's old per-workspace SA and RoleBindings on
+# its next build instead of failing with a 403.
+#
 # Lets the coder control plane's own ServiceAccount manage RoleBindings in
 # each listed namespace -- nothing about pods/PVCs -- so that Terraform,
 # running in-cluster as that SA when it provisions a workspace, can create

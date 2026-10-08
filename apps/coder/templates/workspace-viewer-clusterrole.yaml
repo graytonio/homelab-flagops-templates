@@ -1,9 +1,15 @@
 # Read-only rules only -- this ClusterRole grants nothing by itself. Bound
-# per-namespace (RoleBinding, not ClusterRoleBinding) to an opted-in
-# workspace's own ServiceAccount by coder-templates/nix-dev/main.tf's
-# cluster_access parameter, so a workspace can `kubectl get`/`describe`
-# across the cluster to verify ArgoCD rollouts without ever getting write
-# access anywhere.
+# per-namespace (RoleBinding, not ClusterRoleBinding) to the shared
+# coder-workspace-viewer ServiceAccount in workspace-viewer.yaml, which
+# workspaces opt into via coder-templates/nix-dev/main.tf's cluster_access
+# parameter, so a workspace can `kubectl get`/`describe`/`logs` across the
+# cluster to verify ArgoCD rollouts without ever getting write access
+# anywhere. Cluster-scoped kinds (nodes, PVs, CRDs, ...) are in
+# workspace-viewer.yaml's coder-workspace-cluster-viewer instead.
+#
+# Deliberately absent: secrets, and pods/exec, pods/attach,
+# pods/portforward -- exec is effectively write access to the pod and its
+# mounted secrets, not a read.
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
@@ -17,7 +23,12 @@ rules:
       - events
       - namespaces
       - persistentvolumeclaims
+      - endpoints
+      - serviceaccounts
     verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/log"]
+    verbs: ["get"]
   - apiGroups: ["apps"]
     resources:
       - deployments
@@ -31,11 +42,64 @@ rules:
       - cronjobs
     verbs: ["get", "list", "watch"]
   - apiGroups: ["networking.k8s.io"]
-    resources: ["ingresses"]
+    resources: ["ingresses", "networkpolicies"]
     verbs: ["get", "list", "watch"]
+  - apiGroups: ["discovery.k8s.io"]
+    resources: ["endpointslices"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["pods"]
+    verbs: ["get", "list"]
   - apiGroups: ["argoproj.io"]
     resources:
       - applications
       - applicationsets
       - appprojects
+    verbs: ["get", "list", "watch"]
+  # Operator CRs the renovate-pr-rollout skill inspects. None hold secret
+  # values -- ExternalSecrets/SecretStores only reference them.
+  - apiGroups: ["acid.zalan.do"]
+    resources:
+      - postgresqls
+      - operatorconfigurations
+      - postgresteams
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["longhorn.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["external-secrets.io"]
+    resources:
+      - externalsecrets
+      - secretstores
+      - pushsecrets
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["cert-manager.io"]
+    resources:
+      - certificates
+      - certificaterequests
+      - issuers
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["acme.cert-manager.io"]
+    resources: ["orders", "challenges"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["traefik.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metallb.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["collectors.grafana.com"]
+    resources: ["alloys"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["externaldns.k8s.io"]
+    resources: ["dnsendpoints"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["upgrade.cattle.io"]
+    resources: ["plans"]
     verbs: ["get", "list", "watch"]

@@ -1,0 +1,15 @@
+apiVersion: "acid.zalan.do/v1"
+kind: postgresql
+metadata:
+  name: warframe-tracker-db
+spec:
+  teamId: "warframe-tracker"
+  volume:
+    size: 2Gi
+  numberOfInstances: 1
+  users:
+    warframe: []  # database owner; the app applies its own schema on startup
+  databases:
+    warframe: warframe
+  postgresql:
+    version: "17"

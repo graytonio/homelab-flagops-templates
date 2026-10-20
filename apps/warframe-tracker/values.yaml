@@ -1,0 +1,83 @@
+warframe-tracker:
+  controllers:
+    main:
+      enabled: true
+      replicas: 1
+      annotations:
+        argocd.argoproj.io/sync-options: Replace=true
+      containers:
+        main:
+          image:
+            repository: ghcr.io/graytonio/warframe-tracker
+            tag: 0.1.0
+            pullPolicy: IfNotPresent
+          args: ["serve"]
+          env: &db-env
+            # Credentials come from the postgres-operator's generated secret (alphanumeric
+            # passwords, so they're safe to splice into a URL). PGUSER/PGPASSWORD must be
+            # listed before DATABASE_URL for $(VAR) expansion. Spilo only allows SSL.
+            # Until the operator creates the database, this pod crash-loops; it self-heals.
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: warframe.warframe-tracker-db.credentials.postgresql.acid.zalan.do
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: warframe.warframe-tracker-db.credentials.postgresql.acid.zalan.do
+                  key: password
+            - name: DATABASE_URL
+              value: postgres://$(PGUSER):$(PGPASSWORD)@warframe-tracker-db.warframe-tracker.svc.cluster.local:5432/warframe?sslmode=require
+
+    # Imports game data from the wiki; unchanged modules are skipped. Not run at startup so a
+    # slow wiki never blocks the web pod. First run after deploy:
+    #   kubectl -n warframe-tracker create job --from=cronjob/<name> first-import
+    import:
+      enabled: true
+      type: cronjob
+      cronjob:
+        schedule: "17 */6 * * *"
+        concurrencyPolicy: Forbid
+      containers:
+        main:
+          image:
+            repository: ghcr.io/graytonio/warframe-tracker
+            tag: 0.1.0
+            pullPolicy: IfNotPresent
+          args: ["import"]
+          env: *db-env
+
+  service:
+    main:
+      controller: main
+      primary: true
+      ports:
+        http:
+          port: 3000
+
+  # Private only: the app has no auth.
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        traefik.ingress.kubernetes.io/router.entrypoints: websecure
+        gethomepage.dev/enabled: "true"
+        gethomepage.dev/description: Warframe farming tracker
+        gethomepage.dev/group: Home
+        gethomepage.dev/icon: mdi-sword-cross
+        gethomepage.dev/name: Warframe Tracker
+      labels:
+        access: private
+      tls:
+      - hosts:
+        - warframe.[{ env "env_domain" }]
+        secretName: tls-warframe-tracker-ingress-dns
+      hosts:
+        - host: warframe.[{ env "env_domain" }]
+          paths:
+            - path: /
+              pathType: Prefix
+              service:
+                identifier: main

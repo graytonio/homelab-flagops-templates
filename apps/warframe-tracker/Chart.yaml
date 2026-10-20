@@ -1,0 +1,10 @@
+apiVersion: v2
+name: warframe-tracker
+description: Tracks a Warframe wishlist, component progress and inventory, and plans what to farm
+type: application
+version: 0.1.0
+dependencies:
+  - name: app-template
+    repository: https://bjw-s-labs.github.io/helm-charts/
+    version: 5.2.1
+    alias: warframe-tracker

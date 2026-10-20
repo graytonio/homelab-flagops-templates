@@ -9,7 +9,7 @@ warframe-tracker:
         main:
           image:
             repository: ghcr.io/graytonio/warframe-tracker
-            tag: 0.1.0
+            tag: 0.2.0
             pullPolicy: IfNotPresent
           args: ["serve"]
           env: &db-env
@@ -43,7 +43,7 @@ warframe-tracker:
         main:
           image:
             repository: ghcr.io/graytonio/warframe-tracker
-            tag: 0.1.0
+            tag: 0.2.0
             pullPolicy: IfNotPresent
           args: ["import"]
           env: *db-env

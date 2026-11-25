@@ -21,7 +21,7 @@ ties them together.
   dependency updates", or similar batch-PR sweep.
 - Verifying whether a specific major-version PR is safe before merging.
 - An ArgoCD Application's sync status looks stuck after a merge (see the
-  multi-source revision gotcha below).
+  revision-field gotcha below).
 - Any upgrade that touches PVCs, LoadBalancer Services, or other stateful
   resources.
 
@@ -75,19 +75,19 @@ kubectl -n argocd get application \
   -o custom-columns=NAME:.metadata.name,SYNC:.status.sync.status,HEALTH:.status.health.status
 ```
 
-**Gotcha — multi-source Applications have no `.status.sync.revision`.** Many
-Applications here use the FlagOps Helm CMP plugin as a multi-source
-Application (`spec.sources`, plural). For those, `.status.sync.revision` is
-always empty — polling it spins forever. The synced git revision instead
-lives at `.status.history[-1:].revisions[0]` (a list, even for one source).
-
-Correct poll pattern:
+**Gotcha — where the synced revision lives depends on the source type.**
+Single-source Applications (every `*-production` app and `argo-cd`, since
+2026-11) record it in `.status.sync.revision`. Multi-source Applications
+(`spec.sources`, plural — what the `*-production` apps were before 2026-11)
+leave that field empty forever and record it at
+`.status.history[-1:].revisions[0]` instead. Read both so the poll works for
+either:
 
 ```bash
 sha=$(gh pr view <number> --json mergeCommit -q '.mergeCommit.oid')
 
 until [ "$(kubectl -n argocd get application <app>-production \
-    -o jsonpath='{.status.history[-1:].revisions[0]}')" = "$sha" ] \
+    -o jsonpath='{.status.sync.revision}{.status.history[-1:].revisions[0]}')" = "$sha" ] \
   && [ "$(kubectl -n argocd get application <app>-production \
     -o jsonpath='{.status.sync.status}')" = "Synced" ] \
   && [ "$(kubectl -n argocd get application <app>-production \
@@ -98,14 +98,10 @@ until [ "$(kubectl -n argocd get application <app>-production \
 done
 ```
 
-All four conditions are required together.
+All four conditions are required together. (Concatenating both fields is safe:
+each Application only ever populates one of them.)
 
-**Single-source Applications are the opposite.** `argo-cd` (and any other
-Application with singular `spec.source`) records its revision in
-`.status.sync.revision` and leaves `.status.history[-1:].revisions` empty, so
-the poll above never matches for it. Read both and use whichever is set:
-`-o jsonpath='{.status.history[-1:].revisions[0]}{.status.sync.revision}'`.
-Similarly, `.status.operationState.syncResult` only describes the *last*
+`.status.operationState.syncResult` only describes the *last*
 operation — ArgoCD sometimes follows a full sync with an immediate "partial
 sync" (seen pruning RBAC in coder), so prune counts there can look short. To
 confirm a prune, check the resource is absent from `.status.resources`.
@@ -254,21 +250,20 @@ helm pull <chart> --version <old> --untar --untardir old
 helm pull <chart> --version <new> --untar --untardir new
 ```
 
-This repo's `values.yaml` uses FlagOps templating (`[{ env "VAR" }]`,
-`[{- if env "VAR" }] ... [{- end }]`) which is not valid raw YAML. Strip it
-before feeding to `helm template`:
+This repo's `values.yaml` files are plain YAML with literal values (no
+templating layer since 2026-11). For an aliased dependency, extract just that
+alias's subtree to feed the upstream chart directly:
 
-```python
-import re, yaml
-
-CTRL = re.compile(r'^\[\{-?\s*(if|end|else).*\}\]$')
-EXPR = re.compile(r'\[\{.*?\}\]')
-
-lines = [l for l in open("values.yaml") if not CTRL.match(l.strip())]
-text = EXPR.sub('"dummy"', "".join(lines))
-data = yaml.safe_load(text)
-yaml.safe_dump({"<alias>": data["<alias>"]}, open("/tmp/target-values.yaml", "w"))
+```bash
+yq eval '.<alias>' apps/<app>/values.yaml > /tmp/target-values.yaml
 ```
+
+Use the Helm version `argocd-repo-server` ships (`kubectl -n argocd exec
+deploy/argocd-repo-server -- helm version --short`) — Helm minor versions
+disagree on edge cases like `null` overrides of subchart defaults. For a
+final check of the PR branch as a whole, render the wrapper chart and
+`kubectl diff --server-side` it against live (recipe in CLAUDE.md →
+Troubleshooting).
 
 ```bash
 # Render both, using the ACTUAL production release name (see gotcha below)

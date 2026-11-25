@@ -1,10 +1,11 @@
-# Homelab FlagOps Project - CLAUDE.md
+# Homelab GitOps Project - CLAUDE.md
 
-This project uses the FlagOps framework with ArgoCD to manage a homelab Kubernetes deployment.
+This project uses plain GitOps with ArgoCD to manage a homelab Kubernetes deployment.
+Every value lives in this repo — there is no external config source.
 
 ## Project Overview
 
-- **Framework**: FlagOps - feature flag-based Kubernetes configuration management
+- **Rendering**: native ArgoCD Helm sources (one wrapper chart per app under `apps/`)
 - **GitOps**: ArgoCD manages all deployments
 - **Source Control**: This repository is managed by ArgoCD Autopilot
 - **Environment**: Production deployments to Kubernetes clusters
@@ -38,33 +39,32 @@ This project uses the FlagOps framework with ArgoCD to manage a homelab Kubernet
 └── readme.md
 ```
 
-## FlagOps Framework
+## Configuration Values
 
-### Environment Variables
+All configuration is written literally in each app's `values.yaml` (and, rarely,
+`templates/`). There is no templating layer in front of Helm: what
+`helm template <app>-production apps/<app> -n <app>` renders locally is exactly
+what ArgoCD applies. Shared values are simply repeated where used:
 
-Each app uses FlagOps environment variables in `values.yaml`:
+| Value | Used for |
+|-------|----------|
+| `graytonward.com` | base domain for every ingress host |
+| `10.0.0.90` / `10.0.0.91` | private / public Traefik LoadBalancer IPs |
+| `10.0.0.92` | AdGuard DNS LoadBalancer IP |
+| `10.0.0.90-10.0.0.100` | MetalLB `prod` address pool |
+| `dc.graytonward.com` | public CNAME target for external-dns |
+| `10.0.0.50` | TrueNAS (NFS server for media volumes, truenas-scale endpoint) |
+| uid `1001` / gid `568` | NFS media ownership in pirate-ship |
 
-```yaml
-# Environment-specific variables
-env:
-  FLAGOPS_ENVIRONMENT: production  # staging, production, etc.
-  FLAGOPS_PROP_OWNER: graytonw     # Git user who owns this resource
-  FLAGOPS_PROP_CLUSTER: datacenter  # Cluster name
-  FLAGOPS_PROP_TYPE: public/private # Access type
-```
+Secrets are never inlined — they come from AWS Secrets Manager via
+ExternalSecrets (see below); values files only reference Secret *names*.
 
-### Variable Substitution
-
-Environment variables are referenced in `values.yaml` using `[{ env "VAR_NAME"}]`:
-
-```yaml
-ingress:
-  host: traefik.[{ env "env_domain" }]
-storageClass: [{ env "longhorn_storageclass_enabled" }]
-secretName: [{ env "acme_certs.cloud_secret"}]
-```
-
-These variables are set per-environment via the ApplicationSet's environment block.
+> **History:** until 2026-11 values were injected at render time by the
+> `flagops` CMP plugin from Flagsmith (`[{ env "..." }]` expressions). When the
+> Flagsmith account was locked on 2026-11-06, every lookup returned 403, the
+> plugin silently dropped `values.yaml`, and ArgoCD auto-synced (with prune)
+> chart *defaults* — deleting coder's Postgres cluster and PVC and gotify's
+> data PVC. Do not reintroduce a render-time external config source.
 
 ## Adding a New Application
 
@@ -93,9 +93,8 @@ dependencies:
 ### 3. Create values.yaml
 
 ```yaml
-# App-specific configuration here
-# Reference environment variables where needed:
-# [{ env "VAR_NAME" }]
+# App-specific configuration here, written as literal values.
+# Hostnames use the base domain directly, e.g. myapp.graytonward.com
 ```
 
 ### 4. Create templates/ (if using Helm templates)
@@ -193,19 +192,11 @@ Each environment has a YAML file defining:
 
 The ApplicationSet:
 1. Scans `apps/**/Chart.yaml` files
-2. Creates one Application per app
-3. Sets environment variables from the project's `production.yaml` (or other env)
-4. Deploys to the destination cluster
-
-### Environment Variables by Env
-
-Each environment (`production.yaml`, etc.) defines different variables:
-
-```yaml
-environment:
-  FLAGOPS_PROP_CLUSTER: datacenter
-  FLAGOPS_PROP_TYPE: production  # or staging, dev
-```
+2. Creates one Application per app, named `<app>-production`, deploying to namespace `<app>`
+3. Renders it as a native Helm source with `releaseName: <app>-production` and
+   `skipCrds: true` (charts' `crds/` directories are never applied by ArgoCD —
+   pre-install or upgrade those CRDs manually, see Troubleshooting)
+4. Auto-syncs with `prune` and `selfHeal`, using server-side apply
 
 ## Secrets Management
 
@@ -325,16 +316,14 @@ kubectl -n argocd get application -w
 kubectl -n argocd get application <app-name> -o jsonpath='{.status.sync.status} {.status.health.status}'
 ```
 
-**Multi-source Applications have no `.status.sync.revision`:**
-Many Applications in this repo use the FlagOps Helm CMP plugin as a
-multi-source Application (`spec.sources`, plural, not `spec.source`
-singular). For these, `.status.sync.revision` stays empty forever — a
-polling loop watching that field will spin without ever detecting a
-completed sync. The synced git revision instead lives at
-`.status.history[-1:].revisions[0]` (a list, even with one source):
+**Checking which git revision an Application synced:**
+Applications use a single `spec.source`, so the synced revision is
+`.status.sync.revision`. (Before 2026-11 they were multi-source, which leaves
+that field empty and records the revision at
+`.status.history[-1:].revisions[0]` instead — reading both covers either case.)
 ```bash
 kubectl -n argocd get application <app-name> \
-  -o jsonpath='{.status.history[-1:].revisions[0]}'
+  -o jsonpath='{.status.sync.revision}{.status.history[-1:].revisions[0]}'
 ```
 When scripting "did my merge land" checks, compare this against the merge
 commit SHA (`gh pr view <n> --json mergeCommit -q '.mergeCommit.oid'`), and
@@ -347,31 +336,40 @@ ArgoCD's own redis-ha-server, observability's Alloy) can sit at
 "Progressing" for several minutes during ordinal-by-ordinal replacement —
 normal, not a failure, as long as no pod is actually crash-looping.
 
-### Environment Variable References
+**Verifying a change renders what you expect — render with ArgoCD's own Helm version:**
+`argocd-repo-server` bundles its own Helm (v4.2.1 with ArgoCD v3.5.4 — check
+with `kubectl -n argocd exec deploy/argocd-repo-server -- helm version --short`).
+Helm minor versions differ in edge cases (e.g. a `null` value overriding a
+subchart default was kept by one 4.x release and dropped by another), so a
+local `helm template` on a different version can disagree with production.
+The reliable pre-merge check is: render with the matching Helm version, then
+`kubectl diff --server-side` the output against the live cluster:
+```bash
+helm dependency build apps/<app>
+helm template <app>-production apps/<app> -n <app> \
+  $(kubectl api-versions | sed 's/^/-a /') > /tmp/render.yaml
+yq eval 'select(.kind != null) | .metadata.namespace = (.metadata.namespace // "<app>")' \
+  /tmp/render.yaml | kubectl diff --server-side --force-conflicts -f -
+```
+Expected noise: Helm hook resources (`helm.sh/hook` — ArgoCD runs these as
+sync hooks, so they never exist as live objects) and kubectl's
+`last-applied-configuration` annotation. Anything else is a real change.
 
-If `[{ env "VAR" }]` isn't resolved:
-1. Verify the variable exists in the project's env block
-2. Check the ApplicationSet generator is picking up the right file
-3. Verify `FLAGOPS_ENVIRONMENT` is set correctly
+**ArgoCD caches rendered manifests per git revision.** If a render was wrong
+because of something outside git (a broken Helm repo, a transient fetch
+failure), fixing the cause does not fix the Application — it keeps applying
+the cached bad render until a new commit or a hard refresh:
+`kubectl -n argocd annotate application <app> argocd.argoproj.io/refresh=hard --overwrite`.
+Failed renders are cached too (`Manifest generation error (cached)`).
 
-**`helm lint`/`helm template` passing locally does NOT mean the flagops CMP will render the same manifest:**
-The `flagops` binary (`scripts/generate-helm.sh` in `graytonio/flagops`, run by the `argocd-repo-server`'s
-CMP sidecar) parses **every file in an app directory as a raw Go `text/template`** (custom delimiters
-`[{`/`}]`) *before* Helm or even YAML parsing ever sees it — this preprocessing step is completely
-bypassed when you run plain `helm lint`/`helm template` locally, since those never invoke `flagops` at all.
-Two consequences:
-- Any `\"` (backslash-escaped quote) inside a `[{ env "..." }]` expression — which YAML's own
-  double-quoted-string syntax can tempt you into writing, e.g. `value: "https://foo.[{ env \"env_domain\" }]"`
-  — is a **hard parse error** for Go's text/template (a bare `\` isn't a valid token there). Since
-  `generate-helm.sh` has no `set -e`, a parse failure doesn't abort the script — it silently proceeds to
-  `helm dependency build`/`helm template` with that file simply missing from the generated output, so the
-  chart falls back to its own defaults with no visible error anywhere in ArgoCD's UI. Always write `[{ env "..." }]`
-  as an **unquoted plain YAML scalar** (`host: foo.[{ env "env_domain" }]`), matching every other app in this repo —
-  never wrap it in a quoted string that requires escaping the inner quotes.
-- Because this failure mode produces no sync error and no obviously-wrong ArgoCD status, the only reliable way
-  to catch it is checking the **actual live resources** after a real sync (`kubectl get <resource> -o yaml` /
-  `-o jsonpath`) against what you intended — not just trusting `helm template` output or ArgoCD's `Synced`/`Healthy`
-  status, both of which can look completely fine while the CMP quietly dropped your values file.
+**ArgoCD redis-ha deadlock (all apps stuck at sync `Unknown`, `failed to list refs: EOF`):**
+If the Redis master pod dies and sentinel failover aborts (`-failover-abort-no-good-slave`),
+`argocd-redis-ha-server-0` restarts forever trying to replicate from the dead
+master, and because the StatefulSet is `OrderedReady`, ordinals 1 and 2 are
+never recreated. Redis is only a cache (emptyDir), so the fix is
+`kubectl -n argocd delete pod argocd-redis-ha-server-0`; it re-bootstraps as
+master and the others follow. This hid the Flagsmith outage for 19 days in
+2026-11 — if many apps go `Unknown` at once, check redis first.
 
 **postgres-operator (Spilo) rejects `sslmode=disable`:**
 The Zalando postgres-operator's Spilo image ships a `pg_hba.conf` with `hostssl`-only rules — any connection
@@ -423,7 +421,11 @@ untouched, but plan for it:
 **Longhorn:**
 - May need storageclass permissions
 - Verify Node affinity settings
-- Ingress requires domain environment variable
+- Ingress host is `longhorn.graytonward.com`
+- **No backup target is configured** (`backuptargets.longhorn.io/default` is
+  unavailable) — a deleted PVC is unrecoverable. Volumes use reclaim policy
+  `Delete`, so pruning a PVC (or a `postgresql` CR, whose operator deletes its
+  PVC) destroys the data immediately.
 
 **Traefik (v36+):**
 - JSON schema validation is strict — unknown properties in values.yaml fail the sync
@@ -466,8 +468,7 @@ helm lint .
 # Test rendering
 helm template . --debug
 
-# Check for env var references
-grep -r "env" values.yaml
+# Diff against live with ArgoCD's Helm version (see Troubleshooting)
 ```
 
 ### Commit guidelines
@@ -483,7 +484,7 @@ This repo is managed by ArgoCD Autopilot. Changes trigger:
 1. Git push
 2. ArgoCD detects changes
 3. ApplicationSet creates/updates Applications
-4. Helm renders with environment variables
+4. ArgoCD renders each app with native Helm
 5. Deployments sync to clusters
 
 ## Quick Reference
@@ -494,8 +495,8 @@ This repo is managed by ArgoCD Autopilot. Changes trigger:
 | Check ArgoCD status | `kubectl -n argocd get application -A` |
 | Trigger manual sync | `kubectl patch application <name> -n argocd --type merge -p '{"operation":{"initiatedBy":{"username":"admin"},"sync":{"revision":"HEAD"}}}'` |
 | List Helm dependencies | `helm dependency list apps/<app>/` |
-| Render Helm chart | `helm template <app> apps/<app>/` |
-| Find env var references | `grep -r "env" apps/*/values.yaml` |
+| Render Helm chart | `helm template <app>-production apps/<app>/ -n <app>` |
+| Hard-refresh an app (drop cached render) | `kubectl -n argocd annotate application <name> argocd.argoproj.io/refresh=hard --overwrite` |
 | Check ApplicationSet | `kubectl -n argocd get applicationset production -o yaml` |
 | Pre-install a CRD (server-side) | `curl -sL <crd-url> \| kubectl apply --server-side -f -` |
 
@@ -504,8 +505,7 @@ This repo is managed by ArgoCD Autopilot. Changes trigger:
 For issues:
 1. Check ArgoCD diff view for sync issues
 2. Review Helm logs in Kubernetes
-3. Check project `production.yaml` for env var definitions
-4. Search for similar issues in FlagOps documentation
+3. Check `projects/production.yaml` for the ApplicationSet template
 
 ---
 
@@ -641,8 +641,8 @@ discovery.kubernetes "pods" {
 ```yaml
 # values.yaml (wrapper chart level, not inside alias block)
 hosts:
-  private: traefik.private.[{ env "env_domain" }]
-  public: traefik.public.[{ env "env_domain" }]
+  private: traefik.private.graytonward.com
+  public: traefik.public.graytonward.com
 
 privateingress:
   ports:
@@ -671,7 +671,7 @@ privateingress:
    - https://raw.githubusercontent.com/argoproj/argo-cd/v3.3.6/manifests/ha/install.yaml  # must match!
    ```
 
-2. Update all CMP sidecar container images in `bootstrap/argo-cd/argocd-repo-server.yaml` to match the new version.
+2. (No other image edits needed — the `images:` transformer retags every `quay.io/argoproj/argocd` container.)
 
 3. Migrate `repository.credentials` (removed in v3). Create a `repo-creds` labeled Secret before merging:
    ```bash

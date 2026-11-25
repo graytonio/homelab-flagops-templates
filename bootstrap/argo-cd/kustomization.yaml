@@ -46,5 +46,4 @@ kind: Kustomization
 namespace: argocd
 resources:
 - https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.4/manifests/ha/install.yaml
-- cmp-plugin.yaml
 - ingress.yaml

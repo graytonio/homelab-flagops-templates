@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Release.Namespace }}
+  labels:
+    # The DaemonSet needs a privileged container to write host sysctls.
+    pod-security.kubernetes.io/enforce: privileged

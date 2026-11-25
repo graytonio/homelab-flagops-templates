@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: node-tuning
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: node-tuning
+    app.kubernetes.io/instance: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: node-tuning
+  updateStrategy:
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: node-tuning
+      annotations:
+        # Re-run the init container whenever the sysctl list changes.
+        checksum/sysctls: {{ toJson .Values.sysctls | sha256sum }}
+    spec:
+      priorityClassName: system-node-critical
+      tolerations:
+        - operator: Exists
+      automountServiceAccountToken: false
+      initContainers:
+        - name: sysctl
+          image: {{ .Values.image.sysctl }}
+          securityContext:
+            privileged: true
+          command:
+            - sh
+            - -euc
+            - |
+              {{- range $key, $value := .Values.sysctls }}
+              sysctl -w {{ $key }}={{ $value }}
+              {{- end }}
+          resources:
+            requests: { cpu: 10m, memory: 8Mi }
+            limits: { memory: 16Mi }
+      containers:
+        # Keeps the pod alive so the DaemonSet stays Ready; the init container
+        # re-applies the sysctls whenever the pod is recreated (e.g. node reboot).
+        - name: pause
+          image: {{ .Values.image.pause }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65535
+            capabilities:
+              drop: [ALL]
+          resources:
+            requests: { cpu: 1m, memory: 4Mi }
+            limits: { memory: 8Mi }

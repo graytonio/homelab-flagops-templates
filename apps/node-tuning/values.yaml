@@ -1,0 +1,15 @@
+# Host-level (non-namespaced) kernel parameters applied on every node at pod
+# start, i.e. on every node boot and whenever a node joins.
+#
+# fs.inotify.*: the Ubuntu default max_user_instances=128 is shared by every
+# root process on a node (k3s, containerd and all root containers). Exhausting
+# it makes any file-watching controller exit with "too many open files" --
+# metallb's frr-k8s-statuscleaner crash-looped ~2300 times over 20 days in
+# 2026-11 because of it.
+sysctls:
+  fs.inotify.max_user_instances: "8192"
+  fs.inotify.max_user_watches: "524288"
+
+image:
+  sysctl: docker.io/library/busybox:1.37.0
+  pause: registry.k8s.io/pause:3.10

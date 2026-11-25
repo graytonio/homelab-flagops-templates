@@ -8,7 +8,7 @@ radarr:
     fullnameOverride: pirate-ship-radarr
     nameOverride: radarr
     securityContext:
-      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
+      fsGroup: 568
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -29,8 +29,8 @@ radarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
-            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
+            PUID: 1001
+            PGID: 568
   ingress:
     main:
       enabled: true
@@ -47,10 +47,10 @@ radarr:
         access: private
       tls:
       - hosts:
-        - radarr.[{ env "env_domain" }]
+        - radarr.graytonward.com
         secretName: tls-radarr-ingress-dns
       hosts:
-        - host: radarr.[{ env "env_domain" }]
+        - host: radarr.graytonward.com
           paths:
             - path: /
               pathType: Prefix
@@ -64,18 +64,16 @@ radarr:
         http:
           port: 7878
   persistence:
-[{- if env "media_nfs_volumes_enabled" }]
     media:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.movies" }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/Movies
     downloads:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.downloads" }]
-[{- end }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/downloads
     config:
       enabled: true
       type: configMap
@@ -95,7 +93,7 @@ sonarr:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
     securityContext:
-      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
+      fsGroup: 568
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-sonarr
   controllers:
@@ -113,8 +111,8 @@ sonarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
-            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
+            PUID: 1001
+            PGID: 568
   ingress:
     main:
       enabled: true
@@ -131,10 +129,10 @@ sonarr:
         access: private
       tls:
       - hosts:
-        - sonarr.[{ env "env_domain" }]
+        - sonarr.graytonward.com
         secretName: tls-sonarr-ingress-dns
       hosts:
-        - host: sonarr.[{ env "env_domain" }]
+        - host: sonarr.graytonward.com
           paths:
             - path: /
               pathType: Prefix
@@ -148,18 +146,16 @@ sonarr:
         http:
           port: 8989
   persistence:
-[{- if env "media_nfs_volumes_enabled" }]
     media:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.series" }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/TV
     downloads:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.downloads" }]
-[{- end }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/downloads
     config:
       enabled: true
       type: configMap
@@ -213,10 +209,10 @@ prowlarr:
         access: private
       tls:
       - hosts:
-        - prowlarr.[{ env "env_domain" }]
+        - prowlarr.graytonward.com
         secretName: tls-prowlarr-ingress-dns
       hosts:
-        - host: prowlarr.[{ env "env_domain" }]
+        - host: prowlarr.graytonward.com
           paths:
             - path: /
               pathType: Prefix
@@ -246,7 +242,7 @@ sabnzbd:
     fullnameOverride: pirate-ship-sabnzbd
     nameOverride: sabnzbd
     securityContext:
-      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
+      fsGroup: 568
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-radarr
   defaultPodOptions:
@@ -266,8 +262,8 @@ sabnzbd:
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York
-            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
-            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
+            PUID: 1001
+            PGID: 568
   ingress:
     main:
       enabled: true
@@ -284,10 +280,10 @@ sabnzbd:
         access: private
       tls:
       - hosts:
-        - nzb.[{ env "env_domain" }]
+        - nzb.graytonward.com
         secretName: tls-sabnzbd-ingress-dns
       hosts:
-        - host: nzb.[{ env "env_domain" }]
+        - host: nzb.graytonward.com
           paths:
             - path: /
               pathType: Prefix
@@ -301,13 +297,11 @@ sabnzbd:
         http:
           port: 8080
   persistence:
-[{- if env "media_nfs_volumes_enabled" }]
     downloads:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.downloads" }]
-[{- end }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/downloads
     config:
       enabled: true
       type: persistentVolumeClaim
@@ -322,7 +316,7 @@ lidarr:
     fullnameOverride: pirate-ship-lidarr
     nameOverride: lidarr
     securityContext:
-      fsGroup: [{ default "1000" (env "media_nfs_volumes.gid") }]
+      fsGroup: 568
     annotations:
       app.kubernetes.io/instance: production-pirate-ship-lidarr
   defaultPodOptions:
@@ -343,8 +337,8 @@ lidarr:
           env:
             UMASK_SET: 022
             TZ: America/New_York
-            PUID: [{ default "1000" (env "media_nfs_volumes.uid") }]
-            PGID: [{ default "1000" (env "media_nfs_volumes.gid") }]
+            PUID: 1001
+            PGID: 568
   ingress:
     main:
       enabled: true
@@ -361,10 +355,10 @@ lidarr:
         access: private
       tls:
       - hosts:
-        - lidarr.[{ env "env_domain" }]
+        - lidarr.graytonward.com
         secretName: tls-lidarr-ingress-dns
       hosts:
-        - host: lidarr.[{ env "env_domain" }]
+        - host: lidarr.graytonward.com
           paths:
             - path: /
               pathType: Prefix
@@ -378,18 +372,16 @@ lidarr:
         http:
           port: 8686
   persistence:
-[{- if env "media_nfs_volumes_enabled" }]
     music:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.music" }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/Music
     downloads:
       enabled: true
       type: nfs
-      server: [{ env "media_nfs_volumes.server" }]
-      path: [{ env "media_nfs_volumes.downloads" }]
-[{- end }]
+      server: 10.0.0.50
+      path: /mnt/Vault/Media/downloads
     config:
       enabled: true
       type: configMap
@@ -447,15 +439,15 @@ overseerr:
         gethomepage.dev/icon: seerr.png
         gethomepage.dev/name: Seerr
         gethomepage.dev/pod-selector: "app.kubernetes.io/name=overseerr"
-        external-dns.alpha.kubernetes.io/target: [{ env "external_service_public_endpoint" }]
+        external-dns.alpha.kubernetes.io/target: dc.graytonward.com
       labels:
         access: public
       tls:
       - hosts:
-        - netflix.[{ env "env_domain" }]
+        - netflix.graytonward.com
         secretName: tls-overseerr-ingress-dns
       hosts:
-        - host: netflix.[{ env "env_domain" }]
+        - host: netflix.graytonward.com
           paths:
             - path: /
               pathType: Prefix

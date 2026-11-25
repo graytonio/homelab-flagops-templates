@@ -1,5 +1,5 @@
 externalservice:
-  ipAddress: [{ env "external_service_private_endpoint"}]
+  ipAddress: 10.0.0.50
   port:
     service: 8123
     target: 80
@@ -18,6 +18,6 @@ externalservice:
       access: private
     tls:
       - hosts:
-          - vault.[{ env "env_domain" }]
+          - vault.graytonward.com
         secretName: tls-truenasscale-dns
-    host: vault.[{ env "env_domain" }]
+    host: vault.graytonward.com

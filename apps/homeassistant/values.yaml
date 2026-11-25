@@ -1,8 +1,8 @@
-base_domain: [{ env "env_domain" }]
+base_domain: graytonward.com
 
 private_access:
-  enabled: [{ env "external_service_private_endpoint_enabled" }]
-  endpoint: [{ env "external_service_private_endpoint" }]
+  enabled: true
+  endpoint: 192.168.20.10
 public_access:
-  enabled: [{ env "external_service_public_endpoint_enabled" }]
-  cname: [{ env "external_service_public_endpoint" }]
+  enabled: true
+  cname: dc.graytonward.com

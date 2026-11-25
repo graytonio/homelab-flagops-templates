@@ -1,6 +1,6 @@
 longhorn:
   persistence:
-    defaultClass: [{ env "longhorn_storageclass_enabled" }]
+    defaultClass: true
 
   helmPreUpgradeCheckerJob:
     enabled: true
@@ -9,4 +9,4 @@ longhorn:
     jobEnabled: true
 
   ingress:
-    host: longhorn.[{ env "env_domain" }]
+    host: longhorn.graytonward.com

@@ -1,18 +1,18 @@
 acme:
-  enabled: [{ env "acme_certs_enabled" }]
-  production: [{ env "acme_certs_production_enabled" }]
-  email: [{ env "acme_certs.email" }]
+  enabled: true
+  production: true
+  email: g-buddy@comcast.net
 
 cloudflare:
-  email: [{ env "acme_certs.cloud_email"}]
-  secretRef: [{ env "acme_certs.cloud_secret"}]
-  secretKey: [{ env "acme_certs.cloud_secretKey"}]
-  remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
-  domain: [{ env "env_domain" }]
+  email: graytonio.ward@gmail.com
+  secretRef: cloudflare-credentials
+  secretKey: cloudflare_api_token
+  remoteSecret: cloudflare-dns-apikey
+  domain: graytonward.com
 
 hosts:
-  private: traefik.private.[{ env "env_domain" }]
-  public: traefik.public.[{ env "env_domain" }]
+  private: traefik.private.graytonward.com
+  public: traefik.public.graytonward.com
 
 privateingress:
   deployment:
@@ -29,7 +29,7 @@ privateingress:
     - --api.insecure=true
   service:
     spec:
-      loadBalancerIP: [{ env "private_ingress_lbip" }]
+      loadBalancerIP: 10.0.0.90
   ingressClass:
     name: private-traffic
     isDefaultClass: true
@@ -69,7 +69,7 @@ publicingress:
     - --api.insecure=true
   service:
     spec:
-      loadBalancerIP: [{ env "public_ingress_lbip" }]
+      loadBalancerIP: 10.0.0.91
   ingressClass:
     name: public-traffic
     isDefaultClass: false

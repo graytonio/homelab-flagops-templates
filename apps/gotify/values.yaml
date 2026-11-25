@@ -54,15 +54,15 @@ gotify:
         gethomepage.dev/group: Infrastructure
         gethomepage.dev/icon: gotify.png
         gethomepage.dev/name: Gotify
-        external-dns.alpha.kubernetes.io/target: [{ env "external_service_public_endpoint" }]
+        external-dns.alpha.kubernetes.io/target: dc.graytonward.com
       labels:
         access: public
       tls:
       - hosts:
-        - alerts.[{ env "env_domain" }]
+        - alerts.graytonward.com
         secretName: tls-gotify-ingress-dns
       hosts:
-        - host: alerts.[{ env "env_domain" }]
+        - host: alerts.graytonward.com
           paths:
             - path: /
               pathType: Prefix

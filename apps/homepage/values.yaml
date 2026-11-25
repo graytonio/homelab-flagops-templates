@@ -2,7 +2,7 @@ homepage:
   enableRbac: true
   env:
     - name: HOMEPAGE_ALLOWED_HOSTS
-      value: portal.[{ env "env_domain" }]
+      value: portal.graytonward.com
   serviceAccount:
     create: true
   ingress:
@@ -16,10 +16,10 @@ homepage:
         traefik.ingress.kubernetes.io/router.entrypoints: websecure
       tls:
         - hosts:
-          - portal.[{ env "env_domain" }]
+          - portal.graytonward.com
           secretName: tls-homepage-ingress-dns
       hosts:
-        - host: portal.[{ env "env_domain" }]
+        - host: portal.graytonward.com
           paths: 
             - path: /
               pathType: Prefix

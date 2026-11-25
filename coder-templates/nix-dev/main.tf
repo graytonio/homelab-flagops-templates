@@ -743,7 +743,7 @@ resource "kubernetes_deployment_v1" "main" {
         # `home-manager switch` inside it).
         init_container {
           name    = "seed-home"
-          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:1b4bf0c9879e246950b5d5da510f105dac78c34c183ace33a9ce6141557c2328"
+          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:4281546ebfa2de7dbd9c7f62094dd3b87a0fd081cffae71a4b319f7f2b1c9651"
           command = ["sh", "-c", "if [ ! -e /mnt/persistent-home/.nix-profile ]; then cp -a /home/coder/. /mnt/persistent-home/; fi"]
 
           volume_mount {
@@ -754,7 +754,7 @@ resource "kubernetes_deployment_v1" "main" {
 
         container {
           name    = "dev"
-          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:1b4bf0c9879e246950b5d5da510f105dac78c34c183ace33a9ce6141557c2328"
+          image   = "ghcr.io/graytonio/nixos-workspace:latest@sha256:4281546ebfa2de7dbd9c7f62094dd3b87a0fd081cffae71a4b319f7f2b1c9651"
           command = ["sh", "-c", local.agent_start_script]
 
           env {

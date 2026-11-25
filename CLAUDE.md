@@ -371,6 +371,16 @@ never recreated. Redis is only a cache (emptyDir), so the fix is
 master and the others follow. This hid the Flagsmith outage for 19 days in
 2026-11 — if many apps go `Unknown` at once, check redis first.
 
+**A controller crash-loops with `too many open files`:**
+That is almost always the node's inotify instance limit, not file descriptors.
+`fs.inotify.max_user_instances` is a per-user pool shared by *every* root
+process on a node (k3s, containerd, and all root containers), and the Ubuntu
+default of 128 is easily exhausted; whichever file-watching controller asks
+next exits. The `node-tuning` app (`apps/node-tuning`) raises it on every
+node via a privileged DaemonSet — tune the values in its `values.yaml`, never
+by hand on a node. Check the live value with
+`kubectl -n observability exec <node-exporter-pod> -- cat /host/proc/sys/fs/inotify/max_user_instances`.
+
 **postgres-operator (Spilo) rejects `sslmode=disable`:**
 The Zalando postgres-operator's Spilo image ships a `pg_hba.conf` with `hostssl`-only rules — any connection
 string using `sslmode=disable` gets rejected outright (`pg_hba.conf rejects connection ... no encryption`),

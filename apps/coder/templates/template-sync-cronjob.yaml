@@ -54,6 +54,8 @@ metadata:
   name: coder-template-sync
   namespace: coder
 spec:
+  # DISABLED 2026-11-25 along with the coder server (see values.yaml).
+  suspend: true
   schedule: "*/15 * * * *"
   concurrencyPolicy: Forbid
   successfulJobsHistoryLimit: 3

@@ -6,7 +6,9 @@ spec:
   teamId: "coder"
   volume:
     size: 20Gi
-  numberOfInstances: 1
+  # DISABLED 2026-11-25 along with the coder server (see values.yaml).
+  # 0 stops the pod; the operator keeps the PVC.
+  numberOfInstances: 0
   users:
     coder:
     - superuser

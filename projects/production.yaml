@@ -60,20 +60,15 @@ spec:
             - /spec/versions/1/selectableFields
             - /spec/versions/2/selectableFields
       project: production
-      sources:
-        - path: '{{ .path.path }}'
-          repoURL: 'https://github.com/graytonio/homelab-flagops-templates'
-          plugin:
-            name: flagops-plugin-helm
-            env:
-              - name: FLAGOPS_ENVIRONMENT
-                value: production
-              - name: FLAGOPS_PROP_OWNER
-                value: graytonw
-              - name: FLAGOPS_PROP_CLUSTER
-                value: datacenter
-              - name: FLAGOPS_PROP_TYPE
-                value: '{{.type}}'
+      source:
+        path: '{{ .path.path }}'
+        repoURL: 'https://github.com/graytonio/homelab-flagops-templates'
+        helm:
+          releaseName: '{{ .path.basename }}-production'
+          # The previous flagops CMP ran plain `helm template` without
+          # --include-crds; keep CRDs in charts' crds/ dirs unmanaged so an
+          # app prune can never cascade-delete every CR of that type.
+          skipCrds: true
       syncPolicy:
         syncOptions:
         - CreateNamespace=true

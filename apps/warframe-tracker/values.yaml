@@ -72,10 +72,10 @@ warframe-tracker:
         access: private
       tls:
       - hosts:
-        - warframe.[{ env "env_domain" }]
+        - warframe.graytonward.com
         secretName: tls-warframe-tracker-ingress-dns
       hosts:
-        - host: warframe.[{ env "env_domain" }]
+        - host: warframe.graytonward.com
           paths:
             - path: /
               pathType: Prefix

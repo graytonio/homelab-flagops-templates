@@ -40,7 +40,7 @@ adguard:
         metallb.universe.tf/allow-shared-ip: "adguard-dns"
       enabled: true
       type: LoadBalancer
-      loadBalancerIP: [{ env "external_dns_lbip" }]
+      loadBalancerIP: 10.0.0.92
       ports:
         dns-tcp:
           enabled: true
@@ -54,7 +54,7 @@ adguard:
         metallb.universe.tf/allow-shared-ip: "adguard-dns"
       enabled: true
       type: LoadBalancer
-      loadBalancerIP: [{ env "external_dns_lbip" }]
+      loadBalancerIP: 10.0.0.92
       ports:
         dns-udp:
           enabled: true
@@ -129,7 +129,7 @@ private:
         value: "false"
 
 public:
-  enabled: [{ env "external_dns_public_enabled" }]
+  enabled: true
   image:
     repository: bitnamilegacy/external-dns
   podLabels:
@@ -140,9 +140,9 @@ public:
     create: true
   provider: cloudflare
   cloudflare:
-    secretName: [{ env "acme_certs.cloud_secret"}]
-    remoteSecret: [{ env "acme_certs.cloud_remoteSecret"}]
-    email: [{ env "acme_certs.cloud_email"}]
+    secretName: cloudflare-credentials
+    remoteSecret: cloudflare-dns-apikey
+    email: graytonio.ward@gmail.com
     proxied: true
   policy: upsert-only
   labelFilter: access==public

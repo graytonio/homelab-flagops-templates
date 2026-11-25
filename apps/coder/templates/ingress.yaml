@@ -16,7 +16,7 @@ metadata:
 spec:
   ingressClassName: private-traffic
   rules:
-    - host: coder.[{ env "env_domain" }]
+    - host: coder.graytonward.com
       http:
         paths:
           - path: /
@@ -28,5 +28,5 @@ spec:
                   name: http
   tls:
     - hosts:
-        - coder.[{ env "env_domain" }]
+        - coder.graytonward.com
       secretName: tls-coder-ingress-dns

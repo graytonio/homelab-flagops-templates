@@ -52,10 +52,10 @@ zwilling-tracker:
         access: private
       tls:
       - hosts:
-        - zwilling.[{ env "env_domain" }]
+        - zwilling.graytonward.com
         secretName: tls-zwilling-tracker-ingress-dns
       hosts:
-        - host: zwilling.[{ env "env_domain" }]
+        - host: zwilling.graytonward.com
           paths:
             - path: /
               pathType: Prefix

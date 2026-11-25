@@ -66,7 +66,7 @@ coder:
         # sslmode=disable fails outright -- require SSL instead.
         value: "postgres://$(PGUSER):$(PGPASSWORD)@coder-postgresql.coder.svc.cluster.local:5432/coder?sslmode=require"
       - name: CODER_ACCESS_URL
-        value: https://coder.[{ env "env_domain" }]
+        value: https://coder.graytonward.com
       - name: CODER_EXTERNAL_AUTH_0_ID
         value: primary-github
       - name: CODER_EXTERNAL_AUTH_0_TYPE

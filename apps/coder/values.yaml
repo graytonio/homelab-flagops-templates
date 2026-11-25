@@ -33,6 +33,12 @@ coder:
   # Values — so it must be nested one level deeper to actually reach the
   # subchart's templates.
   coder:
+    # DISABLED 2026-11-25: coder's database was lost in the Flagsmith outage
+    # and coder is being evaluated against alternatives. Scaled to zero
+    # rather than removed -- deleting apps/coder would make ArgoCD prune the
+    # workspace home PVCs (reclaim policy Delete, no Longhorn backups).
+    replicaCount: 0
+
     service:
       # Traefik fronts this via the Ingress below; the chart default of
       # LoadBalancer would otherwise consume a MetalLB IP unnecessarily.

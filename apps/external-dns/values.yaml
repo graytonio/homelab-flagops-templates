@@ -12,7 +12,7 @@ adguard:
           nameOverride: adguard
           image:
             repository: adguard/adguardhome
-            tag: v0.107.79
+            tag: v0.107.80
             pullPolicy: IfNotPresent
           env:
             TZ: America/New_York

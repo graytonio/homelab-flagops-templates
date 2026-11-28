@@ -1,0 +1,11 @@
+# Every file under config/ as one key each. ConfigMap keys can't contain "/",
+# so "workflows/feature.toml" becomes "workflows__feature.toml"; the volume's
+# items (deployment.yaml) map them back to their paths.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: muster-config
+data:
+{{- range $path, $_ := .Files.Glob "config/**" }}
+  {{ include "muster.configKey" $path }}: {{ $.Files.Get $path | toJson }}
+{{- end }}

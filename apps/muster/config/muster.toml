@@ -1,0 +1,28 @@
+# muster global config, mounted read-only at /etc/muster from the muster-config
+# ConfigMap (templates/configmap.yaml packs every file under config/).
+# Workflows and prompts started from `muster init` (muster v0.1.x defaults).
+# Check changes with: muster validate --config-dir apps/muster/config
+
+# Data directories, on the muster-data PVC mounted at /var/lib/muster.
+repos_dir     = "/var/lib/muster/repos"      # repos cloned from MUSTER_REPOS (values.yaml)
+state_dir     = "/var/lib/muster/state"      # run state and config snapshots
+log_dir       = "/var/lib/muster/logs"       # logs of --detach runs
+worktrees_dir = "/var/lib/muster/worktrees"  # run worktrees
+max_concurrent_runs = 2
+
+[herdr]
+bin = "herdr"
+session = ""    # the default session, which the pod's `herdr server` runs
+
+[git]
+remote = "origin"
+base_branch = "main"
+
+[entire]
+enabled = false
+agents = ["claude-code"]
+checkpoint_remote = ""
+
+# Per-repo overrides:
+# [repos.some-repo]
+# base_branch = "develop"

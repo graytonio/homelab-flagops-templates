@@ -1,0 +1,37 @@
+[workflow]
+name = "bugfix"
+description = "Reproduce a bug with a failing test, fix it, review the fix"
+branch_prefix = "muster/fix"
+
+[[stage]]
+id = "reproduce"
+role = "reproducer"
+kind = "claude"
+args = ["--model", "sonnet", "--dangerously-skip-permissions"]
+produces = "repro.md"
+timeout_min = 20
+
+[[stage]]
+id = "fix"
+role = "fixer"
+kind = "claude"
+args = ["--model", "sonnet", "--dangerously-skip-permissions"]
+produces = "fix-report.md"
+timeout_min = 45
+
+[[stage]]
+id = "review"
+role = "reviewer"
+kind = "claude"
+args = ["--model", "opus", "--dangerously-skip-permissions"]
+produces = "review.md"
+verdict = true
+on_changes = "fix"
+max_iterations = 2
+timeout_min = 15
+read_only = true
+
+[finish]
+open_pr = true
+draft = false
+pr_body_from = ["repro.md", "fix-report.md", "review.md"]

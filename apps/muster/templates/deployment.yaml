@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: muster
+  labels:
+    app.kubernetes.io/name: muster
+spec:
+  replicas: 1
+  # One herdr server owns the RWO volume; never run two.
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: muster
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: muster
+    spec:
+      # Gives `herdr server stop` time to shut panes down cleanly. Any pod
+      # restart (including an image bump) stops running agents; muster marks
+      # those runs for `muster resume`.
+      terminationGracePeriodSeconds: 60
+      containers:
+        - name: muster
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          # Runs as root so tailscaled can serve Tailscale SSH; the entrypoint
+          # runs herdr, muster and every agent as the unprivileged muster user.
+          env:
+            - name: MUSTER_REPOS
+              value: {{ join " " .Values.repos | quote }}
+            - name: MUSTER_GIT_NAME
+              value: {{ .Values.git.name | quote }}
+            - name: MUSTER_GIT_EMAIL
+              value: {{ .Values.git.email | quote }}
+            - name: TS_HOSTNAME
+              value: {{ .Values.tailscale.hostname | quote }}
+            - name: TS_EXTRA_ARGS
+              value: {{ .Values.tailscale.extraArgs | quote }}
+          envFrom:
+            - secretRef:
+                name: muster-secrets
+          startupProbe:
+            exec:
+              command: [muster-healthcheck]
+            periodSeconds: 10
+            failureThreshold: 60   # repo clones on first start can be slow
+          livenessProbe:
+            exec:
+              command: [muster-healthcheck]
+            periodSeconds: 30
+            timeoutSeconds: 10
+            failureThreshold: 3
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - name: config
+              mountPath: /etc/muster
+              readOnly: true
+            - name: data
+              mountPath: /var/lib/muster
+      volumes:
+        # The whole directory, never subPath: subPath mounts don't get updates.
+        - name: config
+          configMap:
+            name: muster-config
+            items:
+            {{- range $path, $_ := .Files.Glob "config/**" }}
+              - key: {{ include "muster.configKey" $path }}
+                path: {{ $path | trimPrefix "config/" }}
+            {{- end }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: muster-data

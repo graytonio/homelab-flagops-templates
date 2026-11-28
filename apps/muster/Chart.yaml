@@ -1,0 +1,5 @@
+apiVersion: v2
+name: muster
+description: muster multi-agent workflow runner, with its herdr server, reachable over Tailscale SSH
+type: application
+version: 0.1.0

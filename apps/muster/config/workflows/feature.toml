@@ -1,0 +1,38 @@
+[workflow]
+name = "feature"
+description = "Plan, build and review a feature from a brief"
+branch_prefix = "muster/feat"
+
+[[stage]]
+id = "plan"
+role = "planner"
+kind = "claude"
+args = ["--model", "opus", "--dangerously-skip-permissions"]
+produces = "plan.md"
+timeout_min = 15
+read_only = true
+
+[[stage]]
+id = "build"
+role = "builder"
+kind = "claude"
+args = ["--model", "sonnet", "--dangerously-skip-permissions"]
+produces = "build-report.md"
+timeout_min = 45
+
+[[stage]]
+id = "review"
+role = "reviewer"
+kind = "claude"
+args = ["--model", "opus", "--dangerously-skip-permissions"]
+produces = "review.md"
+verdict = true
+on_changes = "build"
+max_iterations = 2
+timeout_min = 15
+read_only = true
+
+[finish]
+open_pr = true
+draft = false
+pr_body_from = ["plan.md", "build-report.md", "review.md"]

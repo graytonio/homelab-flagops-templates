@@ -1,0 +1,16 @@
+[workflow]
+name = "investigate"
+description = "Answer a question about a repo with a written report; no code changes, no PR"
+branch_prefix = "muster/inv"
+
+[[stage]]
+id = "investigate"
+role = "investigator"
+kind = "claude"
+args = ["--model", "opus", "--dangerously-skip-permissions"]
+produces = "report.md"
+timeout_min = 30
+read_only = true   # muster escalates if anything outside the run dir changes
+
+[finish]
+open_pr = false

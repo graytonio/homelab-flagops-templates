@@ -1,0 +1,49 @@
+# muster: runs multi-agent coding workflows (https://github.com/graytonio/agent-muster)
+# on a herdr server in this pod. Reach it over Tailscale SSH:
+#   ssh muster@muster 'muster status'
+#   herdr --remote muster@muster
+# Config (muster.toml, workflows/, prompts/) lives in ./config and is mounted
+# read-only at /etc/muster; changing it never restarts the pod.
+
+image:
+  repository: ghcr.io/graytonio/muster
+  tag: 0.1.1
+  pullPolicy: IfNotPresent
+
+# GitHub repos (owner/name) cloned into /var/lib/muster/repos on startup if
+# missing. `muster start --repo <name>` uses the last path segment.
+repos: []
+#  - graytonio/muster-sandbox
+
+# Author of the commits muster and its agents make.
+git:
+  name: muster
+  email: muster@graytonward.com
+
+tailscale:
+  hostname: muster
+  # Extra `tailscale up` flags, e.g. "--advertise-tags=tag:muster" when the
+  # auth key allows it.
+  extraArgs: ""
+
+# AWS Secrets Manager entries, synced by templates/externalsecret.yaml.
+secrets:
+  # {"token": "<output of `claude setup-token`>"}, shared with coder.
+  claudeToken: coder-claude-token
+  # {"token": "<GitHub token: contents + pull requests read/write on the repos above>"}
+  githubToken: muster-github-token
+  # {"authkey": "<Tailscale auth key, reusable or one-off; state persists on the PVC>"}
+  tailscaleAuthKey: muster-tailscale-authkey
+
+persistence:
+  # Home dir (herdr + Claude state), run state, logs, repos, worktrees, tailscale state.
+  size: 30Gi
+  storageClass: longhorn
+
+resources:
+  requests:
+    cpu: 500m
+    memory: 2Gi
+  limits:
+    # Each agent (claude) takes ~0.5-1 GiB; 2 concurrent runs x a few agents.
+    memory: 8Gi

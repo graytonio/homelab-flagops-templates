@@ -34,7 +34,8 @@ Every value lives in this repo — there is no external config source.
 │       ├── sonarr
 │       ├── overseerr
 │       ├── pirate-ship
-│       └── discord-file-sync-bot
+│       ├── discord-file-sync-bot
+│       └── muster           # agent workflows; see apps/muster/README.md
 ├── projects/           # Environment YAML files
 └── readme.md
 ```

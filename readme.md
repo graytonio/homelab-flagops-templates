@@ -47,6 +47,7 @@ These are the forward facing applications that provide services to users
 - [HomeAssistant](https://www.home-assistant.io/) - Self hosted home automation platform
 - [Discord File Sync Bot](https://github.com/graytonio/discord-file-sync) - Bot for syncing markdown files to discord embeds
 - [Zwilling Tracker](https://github.com/graytonio/zwilling-tracker) - Scan Zwilling food storage QR codes to see or record what's inside
+- [muster](https://github.com/graytonio/agent-muster) - Multi-agent coding workflows on a herdr server, reached over Tailscale SSH
 
 ## Bootstrapping
 

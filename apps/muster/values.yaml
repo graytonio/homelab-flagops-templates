@@ -7,7 +7,7 @@
 
 image:
   repository: ghcr.io/graytonio/muster
-  tag: 0.1.3
+  tag: 0.1.4
   pullPolicy: IfNotPresent
 
 # GitHub repos (owner/name) cloned into /var/lib/muster/repos on startup if

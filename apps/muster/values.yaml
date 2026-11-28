@@ -12,8 +12,9 @@ image:
 
 # GitHub repos (owner/name) cloned into /var/lib/muster/repos on startup if
 # missing. `muster start --repo <name>` uses the last path segment.
-repos: []
-#  - graytonio/muster-sandbox
+repos:
+  - graytonio/agent-muster
+  - graytonio/homelab-flagops-templates
 
 # Author of the commits muster and its agents make.
 git:
